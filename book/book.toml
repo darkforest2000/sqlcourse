@@ -1,0 +1,43 @@
+[book]
+authors = ["Егор Полетайкин"]
+language = "ru"
+multilingual = false
+src = "src"
+title = "SQL для разработки - Авторский курс"
+description = "4-месячный интенсивный курс по SQL для разработчиков, аналитиков и специалистов смежных профессий"
+
+[build]
+build-dir = "docs"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/username/sql-yaru"
+edit-url-template = "https://github.com/username/sql-yaru/edit/main/{path}"
+additional-css = ["theme/sql-playground.css"]
+additional-js = ["theme/sql-playground.js"]
+
+[output.html.search]
+enable = true
+limit-results = 30
+teaser-word-count = 30
+use-boolean-and = true
+
+[output.html.print]
+enable = true
+
+[output.html.fold]
+enable = true
+level = 1
+
+[preprocessor.links]
+
+[preprocessor.index]
+
+[preprocessor.sql-runner]
+# Кастомный препроцессор для SQL блоков
+
+[output.html.playground]
+copyable = true
+copy-js = true
+runnable = true
