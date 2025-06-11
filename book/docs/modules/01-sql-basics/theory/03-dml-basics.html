@@ -173,7 +173,83 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="Основы-sql-dml"><a class="header" href="#Основы-sql-dml">Основы SQL: DML</a></h1>
+                        <h1 id="93-Основы-sql-dml-data-manipulation-language"><a class="header" href="#93-Основы-sql-dml-data-manipulation-language">9.3. Основы SQL: DML (Data Manipulation Language)</a></h1>
+<p>DML (Data Manipulation Language) — это набор команд SQL, предназначенных для управления данными внутри таблиц: вставки, обновления, удаления и чтения. Если DDL создает "скелет" базы данных, то DML наполняет его "жизнью".</p>
+<p>Основные команды DML:</p>
+<ul>
+<li><code>INSERT</code> — вставить новые данные (строки).</li>
+<li><code>UPDATE</code> — обновить существующие данные.</li>
+<li><code>DELETE</code> — удалить данные.</li>
+<li><code>SELECT</code> — прочитать данные (часто выделяют в отдельную категорию DQL - Data Query Language, но по сути это операция манипуляции). Мы подробно рассмотрим <code>SELECT</code> в теме про JOIN.</li>
+</ul>
+<h2 id="insert-Вставка-данных"><a class="header" href="#insert-Вставка-данных"><code>INSERT</code>: Вставка данных</a></h2>
+<p>Команда <code>INSERT</code> добавляет одну или несколько новых строк в таблицу.</p>
+<p><strong>Синтаксис для вставки одной строки:</strong></p>
+<pre><code class="language-sql">INSERT INTO table_name (column1, column2, ...)
+VALUES (value1, value2, ...);
+</code></pre>
+<p>Важно, чтобы количество и типы данных в <code>VALUES</code> соответствовали перечисленным колонкам. Если вы вставляете значения для всех колонок в их исходном порядке, список колонок можно опустить.</p>
+<p><strong>Пример:</strong></p>
+<pre><code class="language-sql">INSERT INTO employees (first_name, last_name, email, department_id, salary)
+VALUES ('Петр', 'Сергеев', 'petr.sergeev@company.com', 1, 95000.00);
+</code></pre>
+<p><strong>Синтаксис для вставки нескольких строк:</strong></p>
+<pre><code class="language-sql">INSERT INTO table_name (column1, column2, ...)
+VALUES
+    (value1_1, value1_2, ...),
+    (value2_1, value2_2, ...),
+    (value3_1, value3_2, ...);
+</code></pre>
+<p><strong>Пример:</strong></p>
+<pre><code class="language-sql">INSERT INTO employees (first_name, last_name, email, department_id, salary)
+VALUES
+    ('Светлана', 'Соколова', 'svetlana.s@company.com', 2, 82000),
+    ('Игорь', 'Белов', 'igor.belov@company.com', 1, 115000);
+</code></pre>
+<h3 id="returning"><a class="header" href="#returning"><code>RETURNING</code></a></h3>
+<p>В PostgreSQL команда <code>INSERT</code> (а также <code>UPDATE</code> и <code>DELETE</code>) может возвращать значения из обработанных строк с помощью опции <code>RETURNING</code>. Это очень удобно, чтобы сразу получить <code>id</code> созданной записи.</p>
+<pre><code class="language-sql">INSERT INTO employees (first_name, last_name, email)
+VALUES ('Новый', 'Сотрудник', 'new.employee@company.com')
+RETURNING id, first_name, salary; -- salary вернет значение по умолчанию, если оно есть
+</code></pre>
+<h2 id="update-Обновление-данных"><a class="header" href="#update-Обновление-данных"><code>UPDATE</code>: Обновление данных</a></h2>
+<p>Команда <code>UPDATE</code> изменяет существующие строки в таблице.</p>
+<p><strong>Крайне важно всегда использовать <code>UPDATE</code> с условием <code>WHERE</code>!</strong> Иначе вы обновите <strong>ВСЕ</strong> строки в таблице.</p>
+<p><strong>Синтаксис:</strong></p>
+<pre><code class="language-sql">UPDATE table_name
+SET column1 = value1, column2 = value2, ...
+WHERE condition;
+</code></pre>
+<p><strong>Пример:</strong></p>
+<pre><code class="language-sql">-- Повышаем зарплату конкретному сотруднику
+UPDATE employees
+SET salary = salary * 1.10, position = 'Старший разработчик'
+WHERE email = 'ivan.petrov@company.com';
+</code></pre>
+<h2 id="delete-Удаление-данных"><a class="header" href="#delete-Удаление-данных"><code>DELETE</code>: Удаление данных</a></h2>
+<p>Команда <code>DELETE</code> удаляет строки из таблицы.</p>
+<p><strong>Так же, как и с <code>UPDATE</code>, всегда используйте <code>WHERE</code>!</strong> <code>DELETE</code> без <code>WHERE</code> удалит <strong>ВСЕ</strong> данные из таблицы.</p>
+<p><strong>Синтаксис:</strong></p>
+<pre><code class="language-sql">DELETE FROM table_name
+WHERE condition;
+</code></pre>
+<p><strong>Пример:</strong></p>
+<pre><code class="language-sql">-- Увольняем сотрудника
+DELETE FROM employees
+WHERE email = 'new.employee@company.com';
+</code></pre>
+<h2 id="truncate-Быстрая-очистка-таблицы"><a class="header" href="#truncate-Быстрая-очистка-таблицы"><code>TRUNCATE</code>: Быстрая очистка таблицы</a></h2>
+<p>Если вам нужно удалить абсолютно все строки из таблицы, команда <code>TRUNCATE</code> сделает это намного быстрее, чем <code>DELETE FROM table_name</code>.</p>
+<p><code>TRUNCATE</code> не сканирует таблицу построчно, а просто сбрасывает ее до исходного состояния. Она также сбрасывает счетчики <code>SERIAL</code> полей.</p>
+<p><strong>Синтаксис:</strong></p>
+<pre><code class="language-sql">TRUNCATE TABLE table_name;
+
+-- Если на таблицу есть внешние ключи, может потребоваться опция CASCADE
+TRUNCATE TABLE table_name RESTART IDENTITY CASCADE;
+-- RESTART IDENTITY - сброс счетчика
+-- CASCADE - удалить зависимые записи в других таблицах
+</code></pre>
+<p><strong>Внимание:</strong> <code>TRUNCATE</code> — это DDL-подобная операция. Она выполняется очень быстро и её нельзя "откатить" в рамках обычной транзакции так же легко, как <code>DELETE</code>. Используйте с осторожностью.</p>
 
                     </main>
 

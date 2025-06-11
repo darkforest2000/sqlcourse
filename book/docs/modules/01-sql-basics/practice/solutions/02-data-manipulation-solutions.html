@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Упражнения - SQL для разработки - Авторский курс</title>
+        <title>Решения: DML и JOIN - SQL для разработки - Авторский курс</title>
 
 
         <!-- Custom HTML head -->
@@ -144,7 +144,7 @@
                         <a href="https://github.com/username/sql-yaru" title="Git repository" aria-label="Git repository">
                             <i id="git-repository-button" class="fa fa-github"></i>
                         </a>
-                        <a href="https://github.com/username/sql-yaru/edit/main/src/modules/01-sql-basics/practice/exercises/README.md" title="Suggest an edit" aria-label="Suggest an edit">
+                        <a href="https://github.com/username/sql-yaru/edit/main/src/modules/01-sql-basics/practice/solutions/02-data-manipulation-solutions.md" title="Suggest an edit" aria-label="Suggest an edit">
                             <i id="git-edit-button" class="fa fa-edit"></i>
                         </a>
 
@@ -173,17 +173,96 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="Упражнения"><a class="header" href="#Упражнения">Упражнения</a></h1>
+                        <h1 id="Решения-Манипуляция-данными-dml-и-join"><a class="header" href="#Решения-Манипуляция-данными-dml-и-join">Решения: Манипуляция данными (DML и JOIN)</a></h1>
+<h2 id="Решение-1-Наполнение-таблиц"><a class="header" href="#Решение-1-Наполнение-таблиц">Решение 1: Наполнение таблиц</a></h2>
+<pre><code class="language-sql runnable">-- 1. Добавляем категории
+INSERT INTO categories (name) VALUES ('Электроника'), ('Книги'), ('Бытовая техника');
+
+-- 2. Добавляем подкатегорию "Смартфоны"
+-- Сначала получаем id категории "Электроника"
+INSERT INTO categories (name, parent_category_id)
+SELECT 'Смартфоны', id FROM categories WHERE name = 'Электроника';
+
+-- 3. Добавляем продукты
+-- (предположим, что колонка 'article' уже существует после ALTER TABLE)
+INSERT INTO products (name, price, article) VALUES
+('Pixel 8', 70000, 'P8-128'),
+('Чистый код', 1200, 'CL-CODE'),
+('Холодильник Атлант', 45000, 'ATL-200');
+
+-- 4, 5. Связываем продукты и категории
+INSERT INTO product_categories (product_id, category_id)
+VALUES
+    ((SELECT id FROM products WHERE article = 'P8-128'), (SELECT id FROM categories WHERE name = 'Электроника')),
+    ((SELECT id FROM products WHERE article = 'P8-128'), (SELECT id FROM categories WHERE name = 'Смартфоны')),
+    ((SELECT id FROM products WHERE article = 'CL-CODE'), (SELECT id FROM categories WHERE name = 'Книги'));
+
+-- Посмотрим на результат
+SELECT * FROM product_categories;
+</code></pre>
+<h2 id="Решение-2-inner-join"><a class="header" href="#Решение-2-inner-join">Решение 2: <code>INNER JOIN</code></a></h2>
+<pre><code class="language-sql runnable">SELECT
+    p.name AS product_name,
+    p.price,
+    c.name AS category_name
+FROM
+    products AS p
+JOIN
+    product_categories AS pc ON p.id = pc.product_id
+JOIN
+    categories AS c ON pc.category_id = c.id;
+</code></pre>
+<p><em>Замечание: Здесь используется два <code>JOIN</code>, чтобы связать <code>products</code> с <code>categories</code> через промежуточную таблицу <code>product_categories</code>.</em></p>
+<h2 id="Решение-3-left-join"><a class="header" href="#Решение-3-left-join">Решение 3: <code>LEFT JOIN</code></a></h2>
+<pre><code class="language-sql runnable">SELECT
+    p.name AS product_name,
+    c.name AS category_name
+FROM
+    products AS p
+LEFT JOIN
+    product_categories AS pc ON p.id = pc.product_id
+LEFT JOIN
+    categories AS c ON pc.category_id = c.id
+ORDER BY
+    c.name NULLS FIRST;
+</code></pre>
+<p><em>Замечание: <code>ORDER BY c.name NULLS FIRST</code> — это специфичная для PostgreSQL (и стандарта SQL) конструкция, которая позволяет явно управлять сортировкой <code>NULL</code> значений.</em></p>
+<h2 id="Решение-4-right-join-и-агрегация"><a class="header" href="#Решение-4-right-join-и-агрегация">Решение 4: <code>RIGHT JOIN</code> и агрегация</a></h2>
+<pre><code class="language-sql runnable">SELECT
+    c.name AS category_name,
+    COUNT(p.id) AS product_count
+FROM
+    products AS p
+JOIN
+    product_categories AS pc ON p.id = pc.product_id
+RIGHT JOIN
+    categories AS c ON pc.category_id = c.id
+GROUP BY
+    c.name
+ORDER BY
+    product_count DESC;
+</code></pre>
+<p><em>Замечание: Мы используем <code>RIGHT JOIN</code> от <code>categories</code> к <code>product_categories</code>, чтобы гарантированно включить все категории. <code>COUNT(p.id)</code> посчитает <code>NULL</code> как 0, что нам и нужно.</em></p>
+<h2 id="Решение-5-self-join-соединение-с-собой"><a class="header" href="#Решение-5-self-join-соединение-с-собой">Решение 5: Self-Join (соединение с собой)</a></h2>
+<pre><code class="language-sql runnable">SELECT
+    child.name AS child_name,
+    parent.name AS parent_name
+FROM
+    categories AS child
+JOIN
+    categories AS parent ON child.parent_category_id = parent.id;
+</code></pre>
+<p><em>Замечание: Мы берем таблицу <code>categories</code> дважды под разными "именами" (<code>child</code> и <code>parent</code>) и соединяем их по полю <code>parent_category_id</code>, которое ссылается на <code>id</code> в той же таблице.</em></p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../../../modules/01-sql-basics/practice/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../../../modules/01-sql-basics/practice/solutions/01-data-definition-solutions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../../../modules/01-sql-basics/practice/solutions/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../../../modules/01-sql-basics/project/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -193,11 +272,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../../../modules/01-sql-basics/practice/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../../../modules/01-sql-basics/practice/solutions/01-data-definition-solutions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../../../modules/01-sql-basics/practice/solutions/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../../../modules/01-sql-basics/project/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

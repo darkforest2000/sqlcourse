@@ -173,7 +173,99 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="Нормализация-БД"><a class="header" href="#Нормализация-БД">Нормализация БД</a></h1>
+                        <h1 id="94-Нормализация-баз-данных"><a class="header" href="#94-Нормализация-баз-данных">9.4. Нормализация баз данных</a></h1>
+<p>Проектирование структуры базы данных — один из важнейших этапов разработки. <strong>Нормализация</strong> — это формальный процесс организации данных в базе, главная цель которого — устранить избыточность (дублирование) данных и аномалии их изменения.</p>
+<p><strong>Аномалии</strong> — это проблемы, которые возникают в плохо спроектированных базах данных:</p>
+<ul>
+<li><strong>Аномалия вставки</strong>: Невозможность вставить информацию об одном объекте без информации о другом. (Например, нельзя добавить новый курс, пока на него не запишется хотя бы один студент).</li>
+<li><strong>Аномалия обновления</strong>: При изменении повторяющихся данных приходится обновлять их во всех местах, где они встречаются, что чревато ошибками. (Например, при смене названия курса его придется менять в записи у каждого студента).</li>
+<li><strong>Аномалия удаления</strong>: Удаление одной части информации приводит к случайной потере другой. (Например, если последний студент отписался от курса, мы теряем всю информацию о существовании этого курса).</li>
+</ul>
+<p>Нормализация помогает спроектировать таблицы так, чтобы избежать этих проблем. Процесс состоит из последовательного приведения таблиц к <strong>нормальным формам</strong>.</p>
+<h2 id="Первая-нормальная-форма-1nf"><a class="header" href="#Первая-нормальная-форма-1nf">Первая нормальная форма (1NF)</a></h2>
+<p><strong>Правило:</strong> Таблица находится в 1NF, если все её атрибуты (значения в ячейках) являются <strong>атомарными</strong> (неделимыми). Проще говоря, в одной ячейке не может быть списка значений.</p>
+<p><strong>Плохой пример (не в 1NF):</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>student_id</th><th>student_name</th><th>courses</th></tr></thead><tbody>
+<tr><td>1</td><td>Иван Петров</td><td>'Математика, Физика'</td></tr>
+<tr><td>2</td><td>Мария Козлова</td><td>'История'</td></tr>
+</tbody></table>
+</div>
+<p>Здесь поле <code>courses</code> неатомарно. Это затрудняет поиск всех студентов курса "Физика" и требует парсинга строки.</p>
+<p><strong>Хороший пример (в 1NF):</strong>
+Для решения проблемы создают отдельную таблицу для связи студентов и курсов.</p>
+<p><strong>Таблица <code>students</code>:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>student_id</th><th>student_name</th></tr></thead><tbody>
+<tr><td>1</td><td>Иван Петров</td></tr>
+<tr><td>2</td><td>Мария Козлова</td></tr>
+</tbody></table>
+</div>
+<p><strong>Таблица <code>courses</code>:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>course_id</th><th>course_name</th></tr></thead><tbody>
+<tr><td>101</td><td>Математика</td></tr>
+<tr><td>102</td><td>Физика</td></tr>
+<tr><td>103</td><td>История</td></tr>
+</tbody></table>
+</div>
+<p><strong>Таблица <code>student_courses</code> (связующая):</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>student_id</th><th>course_id</th></tr></thead><tbody>
+<tr><td>1</td><td>101</td></tr>
+<tr><td>1</td><td>102</td></tr>
+<tr><td>2</td><td>103</td></tr>
+</tbody></table>
+</div>
+<p>Теперь все данные атомарны, и мы решили проблему 1NF.</p>
+<h2 id="Вторая-нормальная-форма-2nf"><a class="header" href="#Вторая-нормальная-форма-2nf">Вторая нормальная форма (2NF)</a></h2>
+<p><strong>Правило:</strong> Таблица находится в 2NF, если она:</p>
+<ol>
+<li>Находится в 1NF.</li>
+<li>Все её неключевые атрибуты <strong>полностью зависимы</strong> от составного первичного ключа.</li>
+</ol>
+<p>Это правило актуально только для таблиц, у которых первичный ключ состоит из нескольких колонок (составной ключ). Оно означает, что ни один из неключевых столбцов не должен зависеть только от <em>части</em> составного ключа.</p>
+<p><strong>Плохой пример (не в 2NF):</strong>
+Предположим, у нас есть таблица оценок, где первичный ключ — (<code>student_id</code>, <code>course_id</code>).</p>
+<div class="table-wrapper"><table><thead><tr><th>student_id</th><th>course_id</th><th><strong>course_name</strong></th><th>grade</th></tr></thead><tbody>
+<tr><td>1</td><td>101</td><td>Математика</td><td>5</td></tr>
+<tr><td>1</td><td>102</td><td>Физика</td><td>4</td></tr>
+<tr><td>2</td><td>101</td><td>Математика</td><td>5</td></tr>
+</tbody></table>
+</div>
+<p>Здесь <code>course_name</code> зависит только от <code>course_id</code>, то есть от <em>части</em> составного ключа. Это приводит к дублированию названия курса и аномалии обновления (если мы захотим переименовать "Математику" в "Высшую математику").</p>
+<p><strong>Хороший пример (в 2NF):</strong>
+Информация о курсах выносится в отдельную таблицу, как мы уже сделали в примере для 1NF. Таблица <code>student_courses</code> будет содержать только <code>student_id</code>, <code>course_id</code> и <code>grade</code>.</p>
+<h2 id="Третья-нормальная-форма-3nf"><a class="header" href="#Третья-нормальная-форма-3nf">Третья нормальная форма (3NF)</a></h2>
+<p><strong>Правило:</strong> Таблица находится в 3NF, если она:</p>
+<ol>
+<li>Находится в 2NF.</li>
+<li>Отсутствуют <strong>транзитивные зависимости</strong>.</li>
+</ol>
+<p>Транзитивная зависимость — это когда неключевой атрибут зависит от другого неключевого атрибута.</p>
+<p><strong>Плохой пример (не в 3NF):</strong>
+Допустим, в таблице сотрудников есть данные о руководителе отдела.</p>
+<div class="table-wrapper"><table><thead><tr><th>employee_id</th><th>employee_name</th><th>department_name</th><th><strong>department_head</strong></th></tr></thead><tbody>
+<tr><td>1</td><td>Иван Петров</td><td>IT</td><td>Сидоров А.В.</td></tr>
+<tr><td>2</td><td>Мария Козлова</td><td>IT</td><td>Сидоров А.В.</td></tr>
+<tr><td>3</td><td>Ольга Морозова</td><td>HR</td><td>Иванова А.А.</td></tr>
+</tbody></table>
+</div>
+<p>Здесь <code>department_head</code> зависит от <code>department_name</code>, который сам не является ключом. Если сменится глава IT-отдела, нам придется обновить это значение во всех строках для сотрудников IT. Это транзитивная зависимость (<code>employee_id</code> -&gt; <code>department_name</code> -&gt; <code>department_head</code>).</p>
+<p><strong>Хороший пример (в 3NF):</strong>
+Создаем отдельную таблицу <code>departments</code>.</p>
+<p><strong>Таблица <code>employees</code>:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>employee_id</th><th>employee_name</th><th>department_id</th></tr></thead><tbody>
+<tr><td>1</td><td>Иван Петров</td><td>1</td></tr>
+<tr><td>2</td><td>Мария Козлова</td><td>1</td></tr>
+<tr><td>3</td><td>Ольга Морозова</td><td>2</td></tr>
+</tbody></table>
+</div>
+<p><strong>Таблица <code>departments</code>:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>department_id</th><th>department_name</th><th>department_head</th></tr></thead><tbody>
+<tr><td>1</td><td>IT</td><td>Сидоров А.В.</td></tr>
+<tr><td>2</td><td>HR</td><td>Иванова А.А.</td></tr>
+</tbody></table>
+</div>
+<p>Теперь данные о руководителе хранятся в одном месте, и аномалии устранены.</p>
+<h3 id="Итог"><a class="header" href="#Итог">Итог</a></h3>
+<p>Чаще всего на практике достаточно приведения базы данных к 3NF. Это обеспечивает хороший баланс между устранением избыточности и сложностью схемы данных. Существуют и другие нормальные формы (BCNF, 4NF, 5NF), но они применяются для решения более специфических и редких проблем.</p>
 
                     </main>
 

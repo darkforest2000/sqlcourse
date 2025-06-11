@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Практика - SQL для разработки - Авторский курс</title>
+        <title>Упражнения: DML и JOIN - SQL для разработки - Авторский курс</title>
 
 
         <!-- Custom HTML head -->
@@ -12,34 +12,34 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="../../../favicon.svg">
-        <link rel="shortcut icon" href="../../../favicon.png">
-        <link rel="stylesheet" href="../../../css/variables.css">
-        <link rel="stylesheet" href="../../../css/general.css">
-        <link rel="stylesheet" href="../../../css/chrome.css">
-        <link rel="stylesheet" href="../../../css/print.css" media="print">
+        <link rel="icon" href="../../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../../favicon.png">
+        <link rel="stylesheet" href="../../../../css/variables.css">
+        <link rel="stylesheet" href="../../../../css/general.css">
+        <link rel="stylesheet" href="../../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="../../../fonts/fonts.css">
+        <link rel="stylesheet" href="../../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="../../../highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="../../../tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="../../../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../../../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../../../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../../../theme/sql-playground.css">
+        <link rel="stylesheet" href="../../../../theme/sql-playground.css">
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "../../../";
+            const path_to_root = "../../../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc.js"></script>
+        <script src="../../../../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -103,7 +103,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="../../../toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../../../../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -138,13 +138,13 @@
                     <h1 class="menu-title">SQL для разработки - Авторский курс</h1>
 
                     <div class="right-buttons">
-                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../../../../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
                         <a href="https://github.com/username/sql-yaru" title="Git repository" aria-label="Git repository">
                             <i id="git-repository-button" class="fa fa-github"></i>
                         </a>
-                        <a href="https://github.com/username/sql-yaru/edit/main/src/modules/01-sql-basics/practice/README.md" title="Suggest an edit" aria-label="Suggest an edit">
+                        <a href="https://github.com/username/sql-yaru/edit/main/src/modules/01-sql-basics/practice/exercises/02-data-manipulation.md" title="Suggest an edit" aria-label="Suggest an edit">
                             <i id="git-edit-button" class="fa fa-edit"></i>
                         </a>
 
@@ -173,17 +173,91 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="Практика"><a class="header" href="#Практика">Практика</a></h1>
+                        <h1 id="Практика-Манипуляция-данными-dml-и-join"><a class="header" href="#Практика-Манипуляция-данными-dml-и-join">Практика: Манипуляция данными (DML и JOIN)</a></h1>
+<p>В этой секции мы будем наполнять наши таблицы данными и извлекать их с помощью <code>JOIN</code>. Убедитесь, что вы успешно выполнили предыдущие упражнения по DDL.</p>
+<h2 id="Упражнение-1-Наполнение-таблиц"><a class="header" href="#Упражнение-1-Наполнение-таблиц">Упражнение 1: Наполнение таблиц</a></h2>
+<p>Заполните таблицы <code>categories</code> и <code>products</code> начальными данными.</p>
+<p><strong>Задачи:</strong></p>
+<ol>
+<li>Добавьте категории: "Электроника", "Книги", "Бытовая техника".</li>
+<li>Добавьте подкатегорию "Смартфоны" для "Электроники".</li>
+<li>Добавьте три продукта:
+<ul>
+<li>Смартфон "Pixel 8" по цене 70000 с артикулом "P8-128".</li>
+<li>Книгу "Чистый код" по цене 1200 с артикулом "CL-CODE".</li>
+<li>Холодильник "Атлант" по цене 45000 с артикулом "ATL-200".</li>
+</ul>
+</li>
+<li>Свяжите "Pixel 8" с категориями "Электроника" и "Смартфоны".</li>
+<li>Свяжите "Чистый код" с категорией "Книги".</li>
+</ol>
+<pre><code class="language-sql editable">-- 1. Добавляем категории
+INSERT INTO categories ...
+
+-- 2. Добавляем подкатегорию
+-- (Сначала нужно узнать id "Электроники")
+
+
+-- 3. Добавляем продукты
+
+
+-- 4, 5. Связываем продукты и категории
+
+</code></pre>
+<h2 id="Упражнение-2-inner-join"><a class="header" href="#Упражнение-2-inner-join">Упражнение 2: <code>INNER JOIN</code></a></h2>
+<p>Напишите запрос, который выводит <strong>только те</strong> продукты, которые состоят хотя бы в одной категории.</p>
+<p><strong>Требуемые поля:</strong></p>
+<ul>
+<li><code>products.name</code> (название продукта)</li>
+<li><code>products.price</code> (цена)</li>
+<li><code>categories.name</code> (название категории)</li>
+</ul>
+<pre><code class="language-sql editable">-- Ваш код здесь
+
+</code></pre>
+<h2 id="Упражнение-3-left-join"><a class="header" href="#Упражнение-3-left-join">Упражнение 3: <code>LEFT JOIN</code></a></h2>
+<p>Напишите запрос, который выводит <strong>все</strong> продукты и их категории. Если у продукта нет категории, поле категории должно содержать <code>NULL</code>.</p>
+<p><strong>Требуемые поля:</strong></p>
+<ul>
+<li><code>products.name</code> (название продукта)</li>
+<li><code>categories.name</code> (название категории)</li>
+</ul>
+<p><strong>Задача со звездочкой:</strong> Отсортируйте результат так, чтобы продукты без категорий шли первыми.</p>
+<pre><code class="language-sql editable">-- Ваш код здесь
+
+</code></pre>
+<h2 id="Упражнение-4-right-join-и-агрегация"><a class="header" href="#Упражнение-4-right-join-и-агрегация">Упражнение 4: <code>RIGHT JOIN</code> и агрегация</a></h2>
+<p>Напишите запрос, который выводит <strong>все</strong> категории и количество продуктов в каждой из них. Категории без продуктов тоже должны быть в списке с количеством <code>0</code>.</p>
+<p><strong>Требуемые поля:</strong></p>
+<ul>
+<li><code>categories.name</code> (название категории)</li>
+<li><code>product_count</code> (рассчитанное поле количества продуктов)</li>
+</ul>
+<p><strong>Подсказка:</strong> Используйте <code>COUNT(products.id)</code> и <code>GROUP BY</code>.</p>
+<pre><code class="language-sql editable">-- Ваш код здесь
+
+</code></pre>
+<h2 id="Упражнение-5-self-join-соединение-с-собой"><a class="header" href="#Упражнение-5-self-join-соединение-с-собой">Упражнение 5: Self-Join (соединение с собой)</a></h2>
+<p>Выведите все категории, у которых есть родительская категория.</p>
+<p><strong>Требуемые поля:</strong></p>
+<ul>
+<li><code>child_name</code> (имя дочерней категории)</li>
+<li><code>parent_name</code> (имя родительской категории)</li>
+</ul>
+<p><strong>Подсказка:</strong> Вам нужно будет соединить таблицу <code>categories</code> саму с собой, используя псевдонимы, например <code>c1</code> и <code>c2</code>.</p>
+<pre><code class="language-sql editable">-- Ваш код здесь
+
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../../modules/01-sql-basics/theory/06-joins.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../../../modules/01-sql-basics/practice/exercises/01-data-definition.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../../modules/01-sql-basics/practice/exercises/01-data-definition.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../../../modules/01-sql-basics/practice/solutions/01-data-definition-solutions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -193,11 +267,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../../modules/01-sql-basics/theory/06-joins.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../../../modules/01-sql-basics/practice/exercises/01-data-definition.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../../modules/01-sql-basics/practice/exercises/01-data-definition.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../../../modules/01-sql-basics/practice/solutions/01-data-definition-solutions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -228,16 +302,16 @@
         </script>
 
 
-        <script src="../../../elasticlunr.min.js"></script>
-        <script src="../../../mark.min.js"></script>
-        <script src="../../../searcher.js"></script>
+        <script src="../../../../elasticlunr.min.js"></script>
+        <script src="../../../../mark.min.js"></script>
+        <script src="../../../../searcher.js"></script>
 
-        <script src="../../../clipboard.min.js"></script>
-        <script src="../../../highlight.js"></script>
-        <script src="../../../book.js"></script>
+        <script src="../../../../clipboard.min.js"></script>
+        <script src="../../../../highlight.js"></script>
+        <script src="../../../../book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="../../../theme/sql-playground.js"></script>
+        <script src="../../../../theme/sql-playground.js"></script>
 
 
     </div>

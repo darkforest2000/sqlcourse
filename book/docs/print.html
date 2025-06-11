@@ -1642,15 +1642,788 @@ SELECT first_name, last_name, salary FROM employees WHERE department = 'IT';
 <div style="break-before: page; page-break-before: always;"></div><h1 id="Решения"><a class="header" href="#Решения">Решения</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="Обзор-модуля"><a class="header" href="#Обзор-модуля">Обзор модуля</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="Теория-1"><a class="header" href="#Теория-1">Теория</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="Устройство-postgresql"><a class="header" href="#Устройство-postgresql">Устройство PostgreSQL</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="Основы-sql-ddl"><a class="header" href="#Основы-sql-ddl">Основы SQL: DDL</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="Основы-sql-dml"><a class="header" href="#Основы-sql-dml">Основы SQL: DML</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="Нормализация-БД"><a class="header" href="#Нормализация-БД">Нормализация БД</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="Связи-между-таблицами"><a class="header" href="#Связи-между-таблицами">Связи между таблицами</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="join-операции"><a class="header" href="#join-операции">JOIN операции</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="91-Устройство-postgresql"><a class="header" href="#91-Устройство-postgresql">9.1. Устройство PostgreSQL</a></h1>
+<p>PostgreSQL — это мощная, свободно распространяемая объектно-реляционная система управления базами данных (СУБД). Её надёжность, гибкость и соответствие стандартам SQL сделали её популярным выбором для самых разных проектов, от небольших приложений до крупных систем с высокой нагрузкой.</p>
+<h2 id="Архитектура-Клиент-Сервер"><a class="header" href="#Архитектура-Клиент-Сервер">Архитектура "Клиент-Сервер"</a></h2>
+<p>PostgreSQL работает по классической клиент-серверной модели.</p>
+<ul>
+<li><strong>Сервер (Backend)</strong>: Это ядро СУБД. Процесс <code>postgres</code> (также известный как <code>postmaster</code>) постоянно запущен на сервере, где хранятся данные. Он прослушивает сетевые подключения от клиентов. Когда клиент подключается, <code>postmaster</code> создает для него отдельный дочерний процесс-обработчик. Этот процесс выполняет все запросы данного клиента, обеспечивая изоляцию сессий друг от друга.</li>
+<li><strong>Клиент (Frontend)</strong>: Это любое приложение, которое подключается к серверу для выполнения SQL-запросов. Это может быть консольная утилита (<code>psql</code>), графический интерфейс (pgAdmin, DBeaver) или ваше собственное приложение, использующее специальную библиотеку (драйвер) для подключения к PostgreSQL.</li>
+</ul>
+<h2 id="Логическая-структура-хранения"><a class="header" href="#Логическая-структура-хранения">Логическая структура хранения</a></h2>
+<p>Данные в PostgreSQL организованы иерархически:</p>
+<ol>
+<li><strong>Кластер баз данных (Database Cluster)</strong>: Это совокупность баз данных, управляемая одним экземпляром сервера PostgreSQL. Физически это просто каталог на диске (обычно <code>/var/lib/pgsql/data</code> или аналогичный), содержащий все данные и конфигурационные файлы.</li>
+<li><strong>База данных (Database)</strong>: Кластер может содержать несколько баз данных. Каждая БД — это изолированное пространство для хранения объектов. Пользователи из одной БД не могут напрямую видеть данные в другой (если не использовать специальные расширения типа <code>dblink</code>).</li>
+<li><strong>Схемы (Schemas)</strong>: Внутри каждой базы данных можно создавать схемы. Схема — это пространство имен. Она позволяет логически группировать таблицы, функции и другие объекты. Это полезно для организации больших приложений или для разграничения прав доступа. Если схема не указана, используется схема по умолчанию — <code>public</code>.</li>
+<li><strong>Объекты базы данных</strong>: Внутри схем находятся уже знакомые нам объекты:
+<ul>
+<li><strong>Таблицы (Tables)</strong>: Основные структуры для хранения данных.</li>
+<li><strong>Индексы (Indexes)</strong>: Вспомогательные структуры для ускорения поиска данных.</li>
+<li><strong>Представления (Views)</strong>: Виртуальные таблицы, основанные на результатах SQL-запроса.</li>
+<li><strong>Функции и хранимые процедуры</strong>: Блоки кода, которые можно выполнять на сервере.</li>
+<li><strong>Последовательности (Sequences)</strong>, <strong>Типы данных</strong> и другие.</li>
+</ul>
+</li>
+</ol>
+<h2 id="Процессная-архитектура"><a class="header" href="#Процессная-архитектура">Процессная архитектура</a></h2>
+<p>Работающий сервер PostgreSQL — это несколько взаимодействующих процессов:</p>
+<ul>
+<li><code>postmaster</code>: Главный управляющий процесс. Он запускается первым и отвечает за запуск и остановку дочерних процессов, а также принимает входящие подключения.</li>
+<li><strong>Рабочие процессы (Backend Processes)</strong>: На каждое клиентское подключение <code>postmaster</code> создает отдельный процесс <code>postgres</code>. Он обрабатывает все запросы от этого клиента.</li>
+<li><strong>Фоновые процессы (Background Processes)</strong>:
+<ul>
+<li><strong>Writer (BGWriter)</strong>: Периодически записывает "грязные" (измененные в памяти) буферы на диск, снижая нагрузку на рабочие процессы.</li>
+<li><strong>WAL Writer (WAL Writer)</strong>: Записывает транзакционный лог (Write-Ahead Log) на диск. Это ключевой механизм для обеспечения долговечности (Durability) и восстановления после сбоев.</li>
+<li><strong>Autovacuum Launcher</strong>: Запускает процессы очистки (<code>autovacuum worker</code>), которые удаляют "мертвые" строки и анализируют таблицы для оптимизации запросов.</li>
+<li><strong>Checkpointer</strong>: Обеспечивает, что все изменения данных рано или поздно попадут на диск, создавая "точки сохранения" (checkpoints).</li>
+</ul>
+</li>
+</ul>
+<h2 id="Транзакции-и-многоверсионность-mvcc"><a class="header" href="#Транзакции-и-многоверсионность-mvcc">Транзакции и многоверсионность (MVCC)</a></h2>
+<p>Одной из ключевых особенностей PostgreSQL является реализация многоверсионного управления параллельным доступом (Multi-Version Concurrency Control, MVCC).</p>
+<p>Вместо того чтобы блокировать данные при чтении, PostgreSQL для каждого запроса создает "снимок" (snapshot) данных на определенный момент времени. Когда транзакция изменяет строку, СУБД не перезаписывает старые данные, а создает новую версию этой строки. Старая версия остается видимой для транзакций, которые начались раньше. Это позволяет разным клиентам читать и писать данные одновременно с минимальными блокировками, что значительно повышает производительность в многопользовательских системах.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="92-Основы-sql-ddl-data-definition-language"><a class="header" href="#92-Основы-sql-ddl-data-definition-language">9.2. Основы SQL: DDL (Data Definition Language)</a></h1>
+<p>DDL (Data Definition Language) — это подмножество языка SQL, которое отвечает за создание, изменение и удаление структуры объектов базы данных. Эти команды не работают с самими данными, а только с их "контейнерами" и метаданными.</p>
+<p>Основные команды DDL:</p>
+<ul>
+<li><code>CREATE</code> — создать объект.</li>
+<li><code>ALTER</code> — изменить объект.</li>
+<li><code>DROP</code> — удалить объект.</li>
+</ul>
+<h2 id="create-Создание-объектов"><a class="header" href="#create-Создание-объектов"><code>CREATE</code>: Создание объектов</a></h2>
+<h3 id="create-database"><a class="header" href="#create-database"><code>CREATE DATABASE</code></a></h3>
+<p>Создает новую базу данных внутри кластера.</p>
+<pre><code class="language-sql">CREATE DATABASE my_new_database;
+</code></pre>
+<h3 id="create-schema"><a class="header" href="#create-schema"><code>CREATE SCHEMA</code></a></h3>
+<p>Создает новую схему внутри текущей базы данных.</p>
+<pre><code class="language-sql">CREATE SCHEMA my_app;
+</code></pre>
+<h3 id="create-table"><a class="header" href="#create-table"><code>CREATE TABLE</code></a></h3>
+<p>Это одна из самых важных и многофункциональных команд. Она создает новую таблицу в текущей схеме.</p>
+<p><strong>Синтаксис:</strong></p>
+<pre><code class="language-sql">CREATE TABLE table_name (
+    column_name1 data_type [constraints],
+    column_name2 data_type [constraints],
+    ...
+    table_constraints
+);
+</code></pre>
+<p><strong>Основные типы данных в PostgreSQL:</strong></p>
+<ul>
+<li><code>INTEGER</code> (или <code>INT</code>), <code>BIGINT</code>, <code>SMALLINT</code>: Целочисленные типы.</li>
+<li><code>NUMERIC(precision, scale)</code> или <code>DECIMAL</code>: Числа с фиксированной точностью (например, для денег).</li>
+<li><code>REAL</code>, <code>DOUBLE PRECISION</code>: Числа с плавающей точкой.</li>
+<li><code>SERIAL</code>, <code>BIGSERIAL</code>: Автоинкрементные целые числа (идеально для первичных ключей).</li>
+<li><code>VARCHAR(n)</code>, <code>TEXT</code>: Строки. <code>VARCHAR(n)</code> ограничивает максимальную длину, <code>TEXT</code> — нет.</li>
+<li><code>BOOLEAN</code>: <code>TRUE</code> или <code>FALSE</code>.</li>
+<li><code>DATE</code>, <code>TIME</code>, <code>TIMESTAMP</code>: Дата, время, дата и время.</li>
+<li><code>JSON</code>, <code>JSONB</code>: Хранение JSON. <code>JSONB</code> является бинарным форматом и предпочтителен для большинства операций.</li>
+</ul>
+<p><strong>Ограничения (Constraints):</strong></p>
+<ul>
+<li><code>NOT NULL</code>: Колонка не может содержать <code>NULL</code>.</li>
+<li><code>UNIQUE</code>: Все значения в колонке должны быть уникальны.</li>
+<li><code>PRIMARY KEY</code>: Комбинация <code>NOT NULL</code> и <code>UNIQUE</code>. Уникально идентифицирует каждую запись в таблице. У таблицы может быть только один первичный ключ.</li>
+<li><code>FOREIGN KEY</code>: Устанавливает связь с другой таблицей.</li>
+<li><code>CHECK</code>: Проверяет, что значение в колонке удовлетворяет определенному условию.</li>
+<li><code>DEFAULT</code>: Устанавливает значение по умолчанию, если оно не указано.</li>
+</ul>
+<p><strong>Пример:</strong></p>
+<pre><code class="language-sql">CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    balance NUMERIC(10, 2) CHECK (balance &gt;= 0)
+);
+</code></pre>
+<h2 id="alter-Изменение-объектов"><a class="header" href="#alter-Изменение-объектов"><code>ALTER</code>: Изменение объектов</a></h2>
+<p>Команда <code>ALTER</code> позволяет изменять существующие объекты. Чаще всего используется <code>ALTER TABLE</code>.</p>
+<p><strong>Примеры:</strong></p>
+<pre><code class="language-sql">-- Добавить новую колонку
+ALTER TABLE users ADD COLUMN last_login_ip VARCHAR(45);
+
+-- Удалить колонку
+ALTER TABLE users DROP COLUMN last_login_ip;
+
+-- Изменить тип данных колонки (может быть сложной операцией)
+ALTER TABLE users ALTER COLUMN username TYPE VARCHAR(80);
+
+-- Добавить ограничение
+ALTER TABLE users ADD CONSTRAINT positive_balance CHECK (balance &gt;= 0);
+
+-- Удалить ограничение
+ALTER TABLE users DROP CONSTRAINT positive_balance;
+
+-- Переименовать таблицу
+ALTER TABLE users RENAME TO app_users;
+</code></pre>
+<h2 id="drop-Удаление-объектов"><a class="header" href="#drop-Удаление-объектов"><code>DROP</code>: Удаление объектов</a></h2>
+<p>Команда <code>DROP</code> полностью и безвозвратно удаляет объект из базы данных. Используйте её с осторожностью!</p>
+<p><strong>Примеры:</strong></p>
+<pre><code class="language-sql">-- Удалить таблицу
+DROP TABLE app_users;
+
+-- Удалить таблицу, только если она существует (не вызовет ошибки)
+DROP TABLE IF EXISTS app_users;
+
+-- Удалить таблицу и все зависимые от нее объекты (например, внешние ключи)
+DROP TABLE app_users CASCADE;
+
+-- Удалить схему (удалит и все объекты внутри нее)
+DROP SCHEMA my_app CASCADE;
+
+-- Удалить базу данных
+DROP DATABASE my_new_database;
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="93-Основы-sql-dml-data-manipulation-language"><a class="header" href="#93-Основы-sql-dml-data-manipulation-language">9.3. Основы SQL: DML (Data Manipulation Language)</a></h1>
+<p>DML (Data Manipulation Language) — это набор команд SQL, предназначенных для управления данными внутри таблиц: вставки, обновления, удаления и чтения. Если DDL создает "скелет" базы данных, то DML наполняет его "жизнью".</p>
+<p>Основные команды DML:</p>
+<ul>
+<li><code>INSERT</code> — вставить новые данные (строки).</li>
+<li><code>UPDATE</code> — обновить существующие данные.</li>
+<li><code>DELETE</code> — удалить данные.</li>
+<li><code>SELECT</code> — прочитать данные (часто выделяют в отдельную категорию DQL - Data Query Language, но по сути это операция манипуляции). Мы подробно рассмотрим <code>SELECT</code> в теме про JOIN.</li>
+</ul>
+<h2 id="insert-Вставка-данных"><a class="header" href="#insert-Вставка-данных"><code>INSERT</code>: Вставка данных</a></h2>
+<p>Команда <code>INSERT</code> добавляет одну или несколько новых строк в таблицу.</p>
+<p><strong>Синтаксис для вставки одной строки:</strong></p>
+<pre><code class="language-sql">INSERT INTO table_name (column1, column2, ...)
+VALUES (value1, value2, ...);
+</code></pre>
+<p>Важно, чтобы количество и типы данных в <code>VALUES</code> соответствовали перечисленным колонкам. Если вы вставляете значения для всех колонок в их исходном порядке, список колонок можно опустить.</p>
+<p><strong>Пример:</strong></p>
+<pre><code class="language-sql">INSERT INTO employees (first_name, last_name, email, department_id, salary)
+VALUES ('Петр', 'Сергеев', 'petr.sergeev@company.com', 1, 95000.00);
+</code></pre>
+<p><strong>Синтаксис для вставки нескольких строк:</strong></p>
+<pre><code class="language-sql">INSERT INTO table_name (column1, column2, ...)
+VALUES
+    (value1_1, value1_2, ...),
+    (value2_1, value2_2, ...),
+    (value3_1, value3_2, ...);
+</code></pre>
+<p><strong>Пример:</strong></p>
+<pre><code class="language-sql">INSERT INTO employees (first_name, last_name, email, department_id, salary)
+VALUES
+    ('Светлана', 'Соколова', 'svetlana.s@company.com', 2, 82000),
+    ('Игорь', 'Белов', 'igor.belov@company.com', 1, 115000);
+</code></pre>
+<h3 id="returning"><a class="header" href="#returning"><code>RETURNING</code></a></h3>
+<p>В PostgreSQL команда <code>INSERT</code> (а также <code>UPDATE</code> и <code>DELETE</code>) может возвращать значения из обработанных строк с помощью опции <code>RETURNING</code>. Это очень удобно, чтобы сразу получить <code>id</code> созданной записи.</p>
+<pre><code class="language-sql">INSERT INTO employees (first_name, last_name, email)
+VALUES ('Новый', 'Сотрудник', 'new.employee@company.com')
+RETURNING id, first_name, salary; -- salary вернет значение по умолчанию, если оно есть
+</code></pre>
+<h2 id="update-Обновление-данных"><a class="header" href="#update-Обновление-данных"><code>UPDATE</code>: Обновление данных</a></h2>
+<p>Команда <code>UPDATE</code> изменяет существующие строки в таблице.</p>
+<p><strong>Крайне важно всегда использовать <code>UPDATE</code> с условием <code>WHERE</code>!</strong> Иначе вы обновите <strong>ВСЕ</strong> строки в таблице.</p>
+<p><strong>Синтаксис:</strong></p>
+<pre><code class="language-sql">UPDATE table_name
+SET column1 = value1, column2 = value2, ...
+WHERE condition;
+</code></pre>
+<p><strong>Пример:</strong></p>
+<pre><code class="language-sql">-- Повышаем зарплату конкретному сотруднику
+UPDATE employees
+SET salary = salary * 1.10, position = 'Старший разработчик'
+WHERE email = 'ivan.petrov@company.com';
+</code></pre>
+<h2 id="delete-Удаление-данных"><a class="header" href="#delete-Удаление-данных"><code>DELETE</code>: Удаление данных</a></h2>
+<p>Команда <code>DELETE</code> удаляет строки из таблицы.</p>
+<p><strong>Так же, как и с <code>UPDATE</code>, всегда используйте <code>WHERE</code>!</strong> <code>DELETE</code> без <code>WHERE</code> удалит <strong>ВСЕ</strong> данные из таблицы.</p>
+<p><strong>Синтаксис:</strong></p>
+<pre><code class="language-sql">DELETE FROM table_name
+WHERE condition;
+</code></pre>
+<p><strong>Пример:</strong></p>
+<pre><code class="language-sql">-- Увольняем сотрудника
+DELETE FROM employees
+WHERE email = 'new.employee@company.com';
+</code></pre>
+<h2 id="truncate-Быстрая-очистка-таблицы"><a class="header" href="#truncate-Быстрая-очистка-таблицы"><code>TRUNCATE</code>: Быстрая очистка таблицы</a></h2>
+<p>Если вам нужно удалить абсолютно все строки из таблицы, команда <code>TRUNCATE</code> сделает это намного быстрее, чем <code>DELETE FROM table_name</code>.</p>
+<p><code>TRUNCATE</code> не сканирует таблицу построчно, а просто сбрасывает ее до исходного состояния. Она также сбрасывает счетчики <code>SERIAL</code> полей.</p>
+<p><strong>Синтаксис:</strong></p>
+<pre><code class="language-sql">TRUNCATE TABLE table_name;
+
+-- Если на таблицу есть внешние ключи, может потребоваться опция CASCADE
+TRUNCATE TABLE table_name RESTART IDENTITY CASCADE;
+-- RESTART IDENTITY - сброс счетчика
+-- CASCADE - удалить зависимые записи в других таблицах
+</code></pre>
+<p><strong>Внимание:</strong> <code>TRUNCATE</code> — это DDL-подобная операция. Она выполняется очень быстро и её нельзя "откатить" в рамках обычной транзакции так же легко, как <code>DELETE</code>. Используйте с осторожностью.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="94-Нормализация-баз-данных"><a class="header" href="#94-Нормализация-баз-данных">9.4. Нормализация баз данных</a></h1>
+<p>Проектирование структуры базы данных — один из важнейших этапов разработки. <strong>Нормализация</strong> — это формальный процесс организации данных в базе, главная цель которого — устранить избыточность (дублирование) данных и аномалии их изменения.</p>
+<p><strong>Аномалии</strong> — это проблемы, которые возникают в плохо спроектированных базах данных:</p>
+<ul>
+<li><strong>Аномалия вставки</strong>: Невозможность вставить информацию об одном объекте без информации о другом. (Например, нельзя добавить новый курс, пока на него не запишется хотя бы один студент).</li>
+<li><strong>Аномалия обновления</strong>: При изменении повторяющихся данных приходится обновлять их во всех местах, где они встречаются, что чревато ошибками. (Например, при смене названия курса его придется менять в записи у каждого студента).</li>
+<li><strong>Аномалия удаления</strong>: Удаление одной части информации приводит к случайной потере другой. (Например, если последний студент отписался от курса, мы теряем всю информацию о существовании этого курса).</li>
+</ul>
+<p>Нормализация помогает спроектировать таблицы так, чтобы избежать этих проблем. Процесс состоит из последовательного приведения таблиц к <strong>нормальным формам</strong>.</p>
+<h2 id="Первая-нормальная-форма-1nf"><a class="header" href="#Первая-нормальная-форма-1nf">Первая нормальная форма (1NF)</a></h2>
+<p><strong>Правило:</strong> Таблица находится в 1NF, если все её атрибуты (значения в ячейках) являются <strong>атомарными</strong> (неделимыми). Проще говоря, в одной ячейке не может быть списка значений.</p>
+<p><strong>Плохой пример (не в 1NF):</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>student_id</th><th>student_name</th><th>courses</th></tr></thead><tbody>
+<tr><td>1</td><td>Иван Петров</td><td>'Математика, Физика'</td></tr>
+<tr><td>2</td><td>Мария Козлова</td><td>'История'</td></tr>
+</tbody></table>
+</div>
+<p>Здесь поле <code>courses</code> неатомарно. Это затрудняет поиск всех студентов курса "Физика" и требует парсинга строки.</p>
+<p><strong>Хороший пример (в 1NF):</strong>
+Для решения проблемы создают отдельную таблицу для связи студентов и курсов.</p>
+<p><strong>Таблица <code>students</code>:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>student_id</th><th>student_name</th></tr></thead><tbody>
+<tr><td>1</td><td>Иван Петров</td></tr>
+<tr><td>2</td><td>Мария Козлова</td></tr>
+</tbody></table>
+</div>
+<p><strong>Таблица <code>courses</code>:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>course_id</th><th>course_name</th></tr></thead><tbody>
+<tr><td>101</td><td>Математика</td></tr>
+<tr><td>102</td><td>Физика</td></tr>
+<tr><td>103</td><td>История</td></tr>
+</tbody></table>
+</div>
+<p><strong>Таблица <code>student_courses</code> (связующая):</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>student_id</th><th>course_id</th></tr></thead><tbody>
+<tr><td>1</td><td>101</td></tr>
+<tr><td>1</td><td>102</td></tr>
+<tr><td>2</td><td>103</td></tr>
+</tbody></table>
+</div>
+<p>Теперь все данные атомарны, и мы решили проблему 1NF.</p>
+<h2 id="Вторая-нормальная-форма-2nf"><a class="header" href="#Вторая-нормальная-форма-2nf">Вторая нормальная форма (2NF)</a></h2>
+<p><strong>Правило:</strong> Таблица находится в 2NF, если она:</p>
+<ol>
+<li>Находится в 1NF.</li>
+<li>Все её неключевые атрибуты <strong>полностью зависимы</strong> от составного первичного ключа.</li>
+</ol>
+<p>Это правило актуально только для таблиц, у которых первичный ключ состоит из нескольких колонок (составной ключ). Оно означает, что ни один из неключевых столбцов не должен зависеть только от <em>части</em> составного ключа.</p>
+<p><strong>Плохой пример (не в 2NF):</strong>
+Предположим, у нас есть таблица оценок, где первичный ключ — (<code>student_id</code>, <code>course_id</code>).</p>
+<div class="table-wrapper"><table><thead><tr><th>student_id</th><th>course_id</th><th><strong>course_name</strong></th><th>grade</th></tr></thead><tbody>
+<tr><td>1</td><td>101</td><td>Математика</td><td>5</td></tr>
+<tr><td>1</td><td>102</td><td>Физика</td><td>4</td></tr>
+<tr><td>2</td><td>101</td><td>Математика</td><td>5</td></tr>
+</tbody></table>
+</div>
+<p>Здесь <code>course_name</code> зависит только от <code>course_id</code>, то есть от <em>части</em> составного ключа. Это приводит к дублированию названия курса и аномалии обновления (если мы захотим переименовать "Математику" в "Высшую математику").</p>
+<p><strong>Хороший пример (в 2NF):</strong>
+Информация о курсах выносится в отдельную таблицу, как мы уже сделали в примере для 1NF. Таблица <code>student_courses</code> будет содержать только <code>student_id</code>, <code>course_id</code> и <code>grade</code>.</p>
+<h2 id="Третья-нормальная-форма-3nf"><a class="header" href="#Третья-нормальная-форма-3nf">Третья нормальная форма (3NF)</a></h2>
+<p><strong>Правило:</strong> Таблица находится в 3NF, если она:</p>
+<ol>
+<li>Находится в 2NF.</li>
+<li>Отсутствуют <strong>транзитивные зависимости</strong>.</li>
+</ol>
+<p>Транзитивная зависимость — это когда неключевой атрибут зависит от другого неключевого атрибута.</p>
+<p><strong>Плохой пример (не в 3NF):</strong>
+Допустим, в таблице сотрудников есть данные о руководителе отдела.</p>
+<div class="table-wrapper"><table><thead><tr><th>employee_id</th><th>employee_name</th><th>department_name</th><th><strong>department_head</strong></th></tr></thead><tbody>
+<tr><td>1</td><td>Иван Петров</td><td>IT</td><td>Сидоров А.В.</td></tr>
+<tr><td>2</td><td>Мария Козлова</td><td>IT</td><td>Сидоров А.В.</td></tr>
+<tr><td>3</td><td>Ольга Морозова</td><td>HR</td><td>Иванова А.А.</td></tr>
+</tbody></table>
+</div>
+<p>Здесь <code>department_head</code> зависит от <code>department_name</code>, который сам не является ключом. Если сменится глава IT-отдела, нам придется обновить это значение во всех строках для сотрудников IT. Это транзитивная зависимость (<code>employee_id</code> -&gt; <code>department_name</code> -&gt; <code>department_head</code>).</p>
+<p><strong>Хороший пример (в 3NF):</strong>
+Создаем отдельную таблицу <code>departments</code>.</p>
+<p><strong>Таблица <code>employees</code>:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>employee_id</th><th>employee_name</th><th>department_id</th></tr></thead><tbody>
+<tr><td>1</td><td>Иван Петров</td><td>1</td></tr>
+<tr><td>2</td><td>Мария Козлова</td><td>1</td></tr>
+<tr><td>3</td><td>Ольга Морозова</td><td>2</td></tr>
+</tbody></table>
+</div>
+<p><strong>Таблица <code>departments</code>:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>department_id</th><th>department_name</th><th>department_head</th></tr></thead><tbody>
+<tr><td>1</td><td>IT</td><td>Сидоров А.В.</td></tr>
+<tr><td>2</td><td>HR</td><td>Иванова А.А.</td></tr>
+</tbody></table>
+</div>
+<p>Теперь данные о руководителе хранятся в одном месте, и аномалии устранены.</p>
+<h3 id="Итог"><a class="header" href="#Итог">Итог</a></h3>
+<p>Чаще всего на практике достаточно приведения базы данных к 3NF. Это обеспечивает хороший баланс между устранением избыточности и сложностью схемы данных. Существуют и другие нормальные формы (BCNF, 4NF, 5NF), но они применяются для решения более специфических и редких проблем.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="95-Связи-между-таблицами"><a class="header" href="#95-Связи-между-таблицами">9.5. Связи между таблицами</a></h1>
+<p>В реляционных базах данных информация разбита на множество таблиц. Чтобы эти данные имели смысл, таблицы должны быть связаны друг с другом. Механизм, обеспечивающий эти связи — это <strong>первичные</strong> и <strong>внешние ключи</strong>.</p>
+<ul>
+<li><strong>Первичный ключ (Primary Key)</strong>: Один или несколько столбцов, значения которых уникально идентифицируют каждую строку в таблице. Он не может содержать <code>NULL</code>.</li>
+<li><strong>Внешний ключ (Foreign Key)</strong>: Один или несколько столбцов в таблице, которые ссылаются на первичный ключ в другой таблице. Это и есть "связь".</li>
+</ul>
+<h2 id="Типы-связей"><a class="header" href="#Типы-связей">Типы связей</a></h2>
+<p>Существует три основных типа связей между таблицами.</p>
+<h3 id="1-Один-ко-многим-one-to-many-1m"><a class="header" href="#1-Один-ко-многим-one-to-many-1m">1. Один-ко-многим (One-to-Many, 1:M)</a></h3>
+<p>Это самый распространенный тип связи. Одна запись в "родительской" таблице (таблица "один") может быть связана с несколькими записями в "дочерней" таблице (таблица "многие").</p>
+<p><strong>Пример:</strong> Один отдел — много сотрудников.</p>
+<ul>
+<li>Таблица <code>departments</code> (отделы) — родительская. Её первичный ключ <code>id</code>.</li>
+<li>Таблица <code>employees</code> (сотрудники) — дочерняя. В ней есть внешний ключ <code>department_id</code>, который ссылается на <code>departments(id)</code>.</li>
+</ul>
+<p><strong>Реализация:</strong></p>
+<pre><code class="language-sql">CREATE TABLE departments (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    department_id INTEGER, -- Внешний ключ
+
+    -- Устанавливаем связь
+    FOREIGN KEY (department_id) REFERENCES departments (id)
+);
+</code></pre>
+<p>Теперь у каждого сотрудника может быть только один отдел, но в одном отделе может быть много сотрудников.</p>
+<h3 id="2-Многие-ко-многим-many-to-many-mn"><a class="header" href="#2-Многие-ко-многим-many-to-many-mn">2. Многие-ко-многим (Many-to-Many, M:N)</a></h3>
+<p>Эта связь возникает, когда одна запись из таблицы А может быть связана с несколькими записями из таблицы Б, и наоборот.</p>
+<p><strong>Пример:</strong> Студенты и курсы. Один студент может записаться на много курсов, и на одном курсе может учиться много студентов.</p>
+<p>Такую связь нельзя реализовать напрямую. Для этого используется третья, <strong>связующая таблица</strong> (junction table).</p>
+<p><strong>Реализация:</strong></p>
+<pre><code class="language-sql">CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(150) NOT NULL
+);
+
+-- Связующая таблица
+CREATE TABLE student_courses (
+    student_id INTEGER REFERENCES students(id),
+    course_id INTEGER REFERENCES courses(id),
+    enrollment_date DATE,
+    
+    -- Первичный ключ состоит из двух внешних ключей,
+    -- чтобы пара (студент, курс) была уникальной.
+    PRIMARY KEY (student_id, course_id)
+);
+</code></pre>
+<p>В таблице <code>student_courses</code> каждая строка — это факт записи одного конкретного студента на один конкретный курс.</p>
+<h3 id="3-Один-к-одному-one-to-one-11"><a class="header" href="#3-Один-к-одному-one-to-one-11">3. Один-к-одному (One-to-One, 1:1)</a></h3>
+<p>Это самый редкий тип связи. Одна запись в таблице А может быть связана только с одной записью в таблице Б, и наоборот.</p>
+<p>Обычно такую связь используют, чтобы:</p>
+<ul>
+<li>Разбить большую таблицу с множеством столбцов на части по логическому смыслу.</li>
+<li>Вынести редко используемые данные в отдельную таблицу для оптимизации.</li>
+<li>Реализовать более строгий контроль доступа к части данных.</li>
+</ul>
+<p><strong>Пример:</strong> Пользователи и их паспорта. У каждого пользователя может быть только один паспорт.</p>
+<p><strong>Реализация:</strong>
+Ключевым моментом является добавление ограничения <code>UNIQUE</code> к внешнему ключу.</p>
+<pre><code class="language-sql">CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE passports (
+    id SERIAL PRIMARY KEY,
+    series VARCHAR(4) NOT NULL,
+    number VARCHAR(6) NOT NULL,
+    user_id INTEGER NOT NULL UNIQUE, -- Уникальность обеспечивает связь 1:1
+
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+</code></pre>
+<p>Ограничение <code>UNIQUE</code> на <code>user_id</code> в таблице <code>passports</code> не позволит создать две записи с одним и тем же <code>user_id</code>, обеспечивая связь "один-к-одному".</p>
+<h2 id="Целостность-данных-referential-integrity"><a class="header" href="#Целостность-данных-referential-integrity">Целостность данных (Referential Integrity)</a></h2>
+<p>Внешние ключи также помогают поддерживать целостность данных. Что должно произойти с сотрудниками, если мы удалим их отдел?</p>
+<p>Для этого при определении внешнего ключа можно указать правила:</p>
+<ul>
+<li><code>ON DELETE</code>: Что делать в дочерней таблице, если связанная строка удаляется из родительской.</li>
+<li><code>ON UPDATE</code>: Что делать, если значение первичного ключа в родительской таблице изменяется (редко, но возможно).</li>
+</ul>
+<p><strong>Основные действия:</strong></p>
+<ul>
+<li><code>RESTRICT</code> (или <code>NO ACTION</code>): Запретить удаление/изменение в родительской таблице, если есть связанные строки. Это поведение по умолчанию.</li>
+<li><code>CASCADE</code>: Удалить/обновить связанные строки в дочерней таблице автоматически.</li>
+<li><code>SET NULL</code>: Установить значение внешнего ключа в <code>NULL</code> в дочерней таблице.</li>
+<li><code>SET DEFAULT</code>: Установить значение внешнего ключа в значение по умолчанию.</li>
+</ul>
+<p><strong>Пример с <code>CASCADE</code>:</strong></p>
+<pre><code class="language-sql">-- При удалении отдела, все его сотрудники тоже будут удалены
+FOREIGN KEY (department_id) REFERENCES departments (id) ON DELETE CASCADE;
+</code></pre>
+<p>Используйте <code>CASCADE</code> с большой осторожностью, так как это может привести к массовому удалению данных.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="96-join-операции"><a class="header" href="#96-join-операции">9.6. JOIN операции</a></h1>
+<p>Оператор <code>JOIN</code> — это сердце реляционных баз данных. Он используется в запросах <code>SELECT</code> для объединения строк из двух или более таблиц на основе связанных столбцов. Без <code>JOIN</code> нам пришлось бы делать множество отдельных запросов и объединять данные вручную на стороне приложения, что крайне неэффективно.</p>
+<p>Для примеров будем использовать наши таблицы <code>employees</code> и <code>departments</code>.</p>
+<p><strong><code>departments</code></strong></p>
+<div class="table-wrapper"><table><thead><tr><th>id</th><th>name</th></tr></thead><tbody>
+<tr><td>1</td><td>IT</td></tr>
+<tr><td>2</td><td>HR</td></tr>
+<tr><td>3</td><td>Marketing</td></tr>
+</tbody></table>
+</div>
+<p><strong><code>employees</code></strong></p>
+<div class="table-wrapper"><table><thead><tr><th>id</th><th>full_name</th><th>department_id</th></tr></thead><tbody>
+<tr><td>1</td><td>Иван Петров</td><td>1</td></tr>
+<tr><td>2</td><td>Мария Козлова</td><td>1</td></tr>
+<tr><td>3</td><td>Анна Иванова</td><td>2</td></tr>
+<tr><td>4</td><td>Сергей Безруков</td><td>NULL</td></tr>
+</tbody></table>
+</div>
+<h2 id="inner-join-Внутреннее-соединение"><a class="header" href="#inner-join-Внутреннее-соединение"><code>INNER JOIN</code> (Внутреннее соединение)</a></h2>
+<p>Возвращает только те строки, для которых условие соединения выполняется в <strong>обеих</strong> таблицах. Это самый частый тип <code>JOIN</code>. Если в одной из таблиц нет совпадения, строка не попадает в результат.</p>
+<p><strong>Задача:</strong> Вывести список сотрудников и названия их отделов.</p>
+<pre><code class="language-sql">SELECT
+    e.full_name,
+    d.name
+FROM
+    employees AS e
+INNER JOIN
+    departments AS d ON e.department_id = d.id;
+</code></pre>
+<p><strong>Результат:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>full_name</th><th>name</th></tr></thead><tbody>
+<tr><td>Иван Петров</td><td>IT</td></tr>
+<tr><td>Мария Козлова</td><td>IT</td></tr>
+<tr><td>Анна Иванова</td><td>HR</td></tr>
+</tbody></table>
+</div>
+<p>Обратите внимание: Сергей Безруков (без отдела) и отдел Marketing (без сотрудников) не попали в выборку.</p>
+<p><em>Диаграмма Венна: пересечение двух множеств.</em>
+<img src="https://i.imgur.com/39m2s2b.png" alt="INNER JOIN" /></p>
+<h2 id="left-join-Левое-внешнее-соединение"><a class="header" href="#left-join-Левое-внешнее-соединение"><code>LEFT JOIN</code> (Левое внешнее соединение)</a></h2>
+<p>Возвращает <strong>все</strong> строки из <strong>левой</strong> таблицы (первой, указанной в <code>FROM</code>) и совпадающие строки из правой таблицы. Если совпадения в правой таблице нет, то для её столбцов возвращается <code>NULL</code>.</p>
+<p><strong>Задача:</strong> Вывести <strong>всех</strong> сотрудников и, если возможно, названия их отделов.</p>
+<pre><code class="language-sql">SELECT
+    e.full_name,
+    d.name
+FROM
+    employees AS e
+LEFT JOIN
+    departments AS d ON e.department_id = d.id;
+</code></pre>
+<p><strong>Результат:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>full_name</th><th>name</th></tr></thead><tbody>
+<tr><td>Иван Петров</td><td>IT</td></tr>
+<tr><td>Мария Козлова</td><td>IT</td></tr>
+<tr><td>Анна Иванова</td><td>HR</td></tr>
+<tr><td>Сергей Безруков</td><td><strong>NULL</strong></td></tr>
+</tbody></table>
+</div>
+<p>Теперь в результате есть все сотрудники, включая тех, у кого нет отдела.</p>
+<p><em>Диаграмма Венна: все левое множество.</em>
+<img src="https://i.imgur.com/k2jCflI.png" alt="LEFT JOIN" /></p>
+<h2 id="right-join-Правое-внешнее-соединение"><a class="header" href="#right-join-Правое-внешнее-соединение"><code>RIGHT JOIN</code> (Правое внешнее соединение)</a></h2>
+<p>Работает зеркально <code>LEFT JOIN</code>. Возвращает <strong>все</strong> строки из <strong>правой</strong> таблицы (указанной в <code>JOIN</code>) и совпадающие из левой. Если совпадения в левой таблице нет, для её столбцов будет <code>NULL</code>.</p>
+<p><strong>Задача:</strong> Вывести все отделы и, если возможно, сотрудников в них.</p>
+<pre><code class="language-sql">SELECT
+    e.full_name,
+    d.name
+FROM
+    employees AS e
+RIGHT JOIN
+    departments AS d ON e.department_id = d.id;
+</code></pre>
+<p><strong>Результат:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>full_name</th><th>name</th></tr></thead><tbody>
+<tr><td>Иван Петров</td><td>IT</td></tr>
+<tr><td>Мария Козлова</td><td>IT</td></tr>
+<tr><td>Анна Иванова</td><td>HR</td></tr>
+<tr><td><strong>NULL</strong></td><td>Marketing</td></tr>
+</tbody></table>
+</div>
+<p>Теперь в результате есть все отделы, включая те, в которых нет сотрудников. На практике <code>RIGHT JOIN</code> используется редко, так как почти любой такой запрос можно переписать через <code>LEFT JOIN</code>, поменяв таблицы местами, что обычно проще для восприятия.</p>
+<p><em>Диаграмма Венна: все правое множество.</em>
+<img src="https://i.imgur.com/EE2Y21c.png" alt="RIGHT JOIN" /></p>
+<h2 id="full-outer-join-Полное-внешнее-соединение"><a class="header" href="#full-outer-join-Полное-внешнее-соединение"><code>FULL OUTER JOIN</code> (Полное внешнее соединение)</a></h2>
+<p>Объединяет <code>LEFT JOIN</code> и <code>RIGHT JOIN</code>. Возвращает <strong>все</strong> строки из <strong>обеих</strong> таблиц. Если для строки из одной таблицы нет совпадения в другой, недостающие значения заполняются <code>NULL</code>.</p>
+<p><strong>Задача:</strong> Вывести всех сотрудников и все отделы, сопоставив их там, где это возможно.</p>
+<pre><code class="language-sql">SELECT
+    e.full_name,
+    d.name
+FROM
+    employees AS e
+FULL OUTER JOIN
+    departments AS d ON e.department_id = d.id;
+</code></pre>
+<p><strong>Результат:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>full_name</th><th>name</th></tr></thead><tbody>
+<tr><td>Иван Петров</td><td>IT</td></tr>
+<tr><td>Мария Козлова</td><td>IT</td></tr>
+<tr><td>Анна Иванова</td><td>HR</td></tr>
+<tr><td>Сергей Безруков</td><td><strong>NULL</strong></td></tr>
+<tr><td><strong>NULL</strong></td><td>Marketing</td></tr>
+</tbody></table>
+</div>
+<p>В результате присутствуют и сотрудник без отдела, и отдел без сотрудников.</p>
+<p><em>Диаграмма Венна: объединение двух множеств.</em>
+<img src="https://i.imgur.com/PznDoW4.png" alt="FULL OUTER JOIN" /></p>
+<h2 id="Другие-виды-соединений"><a class="header" href="#Другие-виды-соединений">Другие виды соединений</a></h2>
+<ul>
+<li><strong><code>CROSS JOIN</code></strong>: Возвращает декартово произведение двух таблиц (каждая строка одной таблицы соединяется с каждой строкой другой). Используется редко.</li>
+<li><strong><code>NATURAL JOIN</code></strong>: <code>JOIN</code> по всем столбцам с одинаковыми именами. Считается плохой практикой, так как он неявный и может привести к ошибкам, если в таблицы добавятся новые столбцы с совпадающими именами.</li>
+<li><strong>Self-join (Соединение таблицы с самой собой)</strong>: Иногда нужно соединить таблицу саму с собой. Например, чтобы для каждого сотрудника найти имя его менеджера (который тоже является сотрудником). Это делается через присвоение таблице разных псевдонимов (<code>AS</code>).</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="Практика"><a class="header" href="#Практика">Практика</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="Упражнения"><a class="header" href="#Упражнения">Упражнения</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="Решения-1"><a class="header" href="#Решения-1">Решения</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="Практика-Определение-данных-ddl"><a class="header" href="#Практика-Определение-данных-ddl">Практика: Определение данных (DDL)</a></h1>
+<p>В этой секции мы попрактикуемся в создании и изменении структуры таблиц.</p>
+<h2 id="Упражнение-1-Создание-таблицы-products"><a class="header" href="#Упражнение-1-Создание-таблицы-products">Упражнение 1: Создание таблицы <code>products</code></a></h2>
+<p>Создайте таблицу для хранения информации о продуктах в интернет-магазине.</p>
+<p><strong>Требования к таблице <code>products</code>:</strong></p>
+<ol>
+<li><code>id</code>: Уникальный идентификатор, автоинкрементный. Должен быть первичным ключом.</li>
+<li><code>name</code>: Название продукта. Текстовое поле, не может быть пустым.</li>
+<li><code>sku</code>: Артикул (Stock Keeping Unit). Уникальная строка до 50 символов.</li>
+<li><code>description</code>: Описание продукта. Текстовое поле произвольной длины.</li>
+<li><code>price</code>: Цена. Число с точностью до 2 знаков после запятой. Не может быть отрицательным.</li>
+<li><code>stock_quantity</code>: Количество на складе. Целое число, по умолчанию 0.</li>
+<li><code>created_at</code>: Дата и время создания записи. Должно устанавливаться автоматически.</li>
+</ol>
+<pre><code class="language-sql editable">-- Ваш код для создания таблицы products здесь
+
+</code></pre>
+<h2 id="Упражнение-2-Создание-таблицы-categories"><a class="header" href="#Упражнение-2-Создание-таблицы-categories">Упражнение 2: Создание таблицы <code>categories</code></a></h2>
+<p>Создайте таблицу для категорий продуктов.</p>
+<p><strong>Требования к таблице <code>categories</code>:</strong></p>
+<ol>
+<li><code>id</code>: Уникальный автоинкрементный идентификатор (первичный ключ).</li>
+<li><code>name</code>: Название категории, уникальное, не может быть пустым.</li>
+<li><code>parent_category_id</code>: Ссылка на родительскую категорию (в этой же таблице). Это позволяет создавать иерархию категорий (например, "Электроника" -&gt; "Смартфоны"). Может быть <code>NULL</code>, если это категория верхнего уровня.</li>
+</ol>
+<pre><code class="language-sql editable">-- Ваш код для создания таблицы categories здесь
+
+</code></pre>
+<h2 id="Упражнение-3-Связывание-продуктов-и-категорий"><a class="header" href="#Упражнение-3-Связывание-продуктов-и-категорий">Упражнение 3: Связывание продуктов и категорий</a></h2>
+<p>Продукты и категории должны иметь связь "многие-ко-многим". Один продукт может быть в нескольких категориях, и в одной категории может быть много продуктов.</p>
+<p>Создайте для этого связующую таблицу <code>product_categories</code>.</p>
+<p><strong>Требования к таблице:</strong></p>
+<ol>
+<li>Она должна содержать два поля: <code>product_id</code> и <code>category_id</code>.</li>
+<li>Оба поля должны быть внешними ключами, ссылающимися на соответствующие таблицы.</li>
+<li>Пара (<code>product_id</code>, <code>category_id</code>) должна быть уникальной, чтобы избежать дублирования связей. Сделайте эту пару составным первичным ключом.</li>
+<li>При удалении продукта или категории соответствующая запись в этой таблице должна удаляться автоматически.</li>
+</ol>
+<pre><code class="language-sql editable">-- Ваш код для создания таблицы product_categories здесь
+
+</code></pre>
+<h2 id="Упражнение-4-Изменение-таблицы-products"><a class="header" href="#Упражнение-4-Изменение-таблицы-products">Упражнение 4: Изменение таблицы <code>products</code></a></h2>
+<p>Добавьте в таблицу <code>products</code> новые поля и измените существующие.</p>
+<p><strong>Задачи:</strong></p>
+<ol>
+<li>Добавьте поле <code>is_published</code> типа <code>BOOLEAN</code> со значением по умолчанию <code>FALSE</code>.</li>
+<li>Добавьте поле <code>weight_kg</code> типа <code>NUMERIC(8, 3)</code>.</li>
+<li>Измените название поля <code>sku</code> на <code>article</code>.</li>
+</ol>
+<pre><code class="language-sql editable">-- Ваш код для изменения таблицы products здесь
+
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="Практика-Манипуляция-данными-dml-и-join"><a class="header" href="#Практика-Манипуляция-данными-dml-и-join">Практика: Манипуляция данными (DML и JOIN)</a></h1>
+<p>В этой секции мы будем наполнять наши таблицы данными и извлекать их с помощью <code>JOIN</code>. Убедитесь, что вы успешно выполнили предыдущие упражнения по DDL.</p>
+<h2 id="Упражнение-1-Наполнение-таблиц"><a class="header" href="#Упражнение-1-Наполнение-таблиц">Упражнение 1: Наполнение таблиц</a></h2>
+<p>Заполните таблицы <code>categories</code> и <code>products</code> начальными данными.</p>
+<p><strong>Задачи:</strong></p>
+<ol>
+<li>Добавьте категории: "Электроника", "Книги", "Бытовая техника".</li>
+<li>Добавьте подкатегорию "Смартфоны" для "Электроники".</li>
+<li>Добавьте три продукта:
+<ul>
+<li>Смартфон "Pixel 8" по цене 70000 с артикулом "P8-128".</li>
+<li>Книгу "Чистый код" по цене 1200 с артикулом "CL-CODE".</li>
+<li>Холодильник "Атлант" по цене 45000 с артикулом "ATL-200".</li>
+</ul>
+</li>
+<li>Свяжите "Pixel 8" с категориями "Электроника" и "Смартфоны".</li>
+<li>Свяжите "Чистый код" с категорией "Книги".</li>
+</ol>
+<pre><code class="language-sql editable">-- 1. Добавляем категории
+INSERT INTO categories ...
+
+-- 2. Добавляем подкатегорию
+-- (Сначала нужно узнать id "Электроники")
+
+
+-- 3. Добавляем продукты
+
+
+-- 4, 5. Связываем продукты и категории
+
+</code></pre>
+<h2 id="Упражнение-2-inner-join"><a class="header" href="#Упражнение-2-inner-join">Упражнение 2: <code>INNER JOIN</code></a></h2>
+<p>Напишите запрос, который выводит <strong>только те</strong> продукты, которые состоят хотя бы в одной категории.</p>
+<p><strong>Требуемые поля:</strong></p>
+<ul>
+<li><code>products.name</code> (название продукта)</li>
+<li><code>products.price</code> (цена)</li>
+<li><code>categories.name</code> (название категории)</li>
+</ul>
+<pre><code class="language-sql editable">-- Ваш код здесь
+
+</code></pre>
+<h2 id="Упражнение-3-left-join"><a class="header" href="#Упражнение-3-left-join">Упражнение 3: <code>LEFT JOIN</code></a></h2>
+<p>Напишите запрос, который выводит <strong>все</strong> продукты и их категории. Если у продукта нет категории, поле категории должно содержать <code>NULL</code>.</p>
+<p><strong>Требуемые поля:</strong></p>
+<ul>
+<li><code>products.name</code> (название продукта)</li>
+<li><code>categories.name</code> (название категории)</li>
+</ul>
+<p><strong>Задача со звездочкой:</strong> Отсортируйте результат так, чтобы продукты без категорий шли первыми.</p>
+<pre><code class="language-sql editable">-- Ваш код здесь
+
+</code></pre>
+<h2 id="Упражнение-4-right-join-и-агрегация"><a class="header" href="#Упражнение-4-right-join-и-агрегация">Упражнение 4: <code>RIGHT JOIN</code> и агрегация</a></h2>
+<p>Напишите запрос, который выводит <strong>все</strong> категории и количество продуктов в каждой из них. Категории без продуктов тоже должны быть в списке с количеством <code>0</code>.</p>
+<p><strong>Требуемые поля:</strong></p>
+<ul>
+<li><code>categories.name</code> (название категории)</li>
+<li><code>product_count</code> (рассчитанное поле количества продуктов)</li>
+</ul>
+<p><strong>Подсказка:</strong> Используйте <code>COUNT(products.id)</code> и <code>GROUP BY</code>.</p>
+<pre><code class="language-sql editable">-- Ваш код здесь
+
+</code></pre>
+<h2 id="Упражнение-5-self-join-соединение-с-собой"><a class="header" href="#Упражнение-5-self-join-соединение-с-собой">Упражнение 5: Self-Join (соединение с собой)</a></h2>
+<p>Выведите все категории, у которых есть родительская категория.</p>
+<p><strong>Требуемые поля:</strong></p>
+<ul>
+<li><code>child_name</code> (имя дочерней категории)</li>
+<li><code>parent_name</code> (имя родительской категории)</li>
+</ul>
+<p><strong>Подсказка:</strong> Вам нужно будет соединить таблицу <code>categories</code> саму с собой, используя псевдонимы, например <code>c1</code> и <code>c2</code>.</p>
+<pre><code class="language-sql editable">-- Ваш код здесь
+
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="Решения-Определение-данных-ddl"><a class="header" href="#Решения-Определение-данных-ddl">Решения: Определение данных (DDL)</a></h1>
+<h2 id="Решение-1-Создание-таблицы-products"><a class="header" href="#Решение-1-Создание-таблицы-products">Решение 1: Создание таблицы <code>products</code></a></h2>
+<pre><code class="language-sql runnable">CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    sku VARCHAR(50) UNIQUE,
+    description TEXT,
+    price NUMERIC(10, 2) NOT NULL CHECK (price &gt;= 0),
+    stock_quantity INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Проверим, что таблица создалась
+SELECT * FROM products;
+</code></pre>
+<h2 id="Решение-2-Создание-таблицы-categories"><a class="header" href="#Решение-2-Создание-таблицы-categories">Решение 2: Создание таблицы <code>categories</code></a></h2>
+<pre><code class="language-sql runnable">CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    parent_category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL
+);
+
+-- Проверим, что таблица создалась
+SELECT * FROM categories;
+</code></pre>
+<p><em>Примечание: <code>ON DELETE SET NULL</code> означает, что если родительская категория будет удалена, у дочерних категорий это поле станет <code>NULL</code>, и они превратятся в категории верхнего уровня.</em></p>
+<h2 id="Решение-3-Связывание-продуктов-и-категорий"><a class="header" href="#Решение-3-Связывание-продуктов-и-категорий">Решение 3: Связывание продуктов и категорий</a></h2>
+<pre><code class="language-sql runnable">CREATE TABLE product_categories (
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    PRIMARY KEY (product_id, category_id)
+);
+
+-- Проверим структуру таблицы (данных пока нет)
+\d product_categories
+</code></pre>
+<p><em>Примечание: <code>ON DELETE CASCADE</code> здесь очень важен. Он гарантирует, что при удалении продукта или категории, их связи в этой таблице будут автоматически удалены, предотвращая появление "мусорных" ссылок.</em></p>
+<h2 id="Решение-4-Изменение-таблицы-products"><a class="header" href="#Решение-4-Изменение-таблицы-products">Решение 4: Изменение таблицы <code>products</code></a></h2>
+<pre><code class="language-sql runnable">-- 1. Добавляем поле is_published
+ALTER TABLE products ADD COLUMN is_published BOOLEAN DEFAULT FALSE;
+
+-- 2. Добавляем поле weight_kg
+ALTER TABLE products ADD COLUMN weight_kg NUMERIC(8, 3);
+
+-- 3. Переименовываем sku в article
+ALTER TABLE products RENAME COLUMN sku TO article;
+
+-- Проверим новую структуру таблицы
+\d products
+</code></pre>
+<p><em>Примечание: Команда <code>\d</code> является специфичной для клиента <code>psql</code> и может не работать в других SQL-инструментах. Она используется здесь для демонстрации и позволяет быстро посмотреть структуру таблицы.</em></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="Решения-Манипуляция-данными-dml-и-join"><a class="header" href="#Решения-Манипуляция-данными-dml-и-join">Решения: Манипуляция данными (DML и JOIN)</a></h1>
+<h2 id="Решение-1-Наполнение-таблиц"><a class="header" href="#Решение-1-Наполнение-таблиц">Решение 1: Наполнение таблиц</a></h2>
+<pre><code class="language-sql runnable">-- 1. Добавляем категории
+INSERT INTO categories (name) VALUES ('Электроника'), ('Книги'), ('Бытовая техника');
+
+-- 2. Добавляем подкатегорию "Смартфоны"
+-- Сначала получаем id категории "Электроника"
+INSERT INTO categories (name, parent_category_id)
+SELECT 'Смартфоны', id FROM categories WHERE name = 'Электроника';
+
+-- 3. Добавляем продукты
+-- (предположим, что колонка 'article' уже существует после ALTER TABLE)
+INSERT INTO products (name, price, article) VALUES
+('Pixel 8', 70000, 'P8-128'),
+('Чистый код', 1200, 'CL-CODE'),
+('Холодильник Атлант', 45000, 'ATL-200');
+
+-- 4, 5. Связываем продукты и категории
+INSERT INTO product_categories (product_id, category_id)
+VALUES
+    ((SELECT id FROM products WHERE article = 'P8-128'), (SELECT id FROM categories WHERE name = 'Электроника')),
+    ((SELECT id FROM products WHERE article = 'P8-128'), (SELECT id FROM categories WHERE name = 'Смартфоны')),
+    ((SELECT id FROM products WHERE article = 'CL-CODE'), (SELECT id FROM categories WHERE name = 'Книги'));
+
+-- Посмотрим на результат
+SELECT * FROM product_categories;
+</code></pre>
+<h2 id="Решение-2-inner-join"><a class="header" href="#Решение-2-inner-join">Решение 2: <code>INNER JOIN</code></a></h2>
+<pre><code class="language-sql runnable">SELECT
+    p.name AS product_name,
+    p.price,
+    c.name AS category_name
+FROM
+    products AS p
+JOIN
+    product_categories AS pc ON p.id = pc.product_id
+JOIN
+    categories AS c ON pc.category_id = c.id;
+</code></pre>
+<p><em>Замечание: Здесь используется два <code>JOIN</code>, чтобы связать <code>products</code> с <code>categories</code> через промежуточную таблицу <code>product_categories</code>.</em></p>
+<h2 id="Решение-3-left-join"><a class="header" href="#Решение-3-left-join">Решение 3: <code>LEFT JOIN</code></a></h2>
+<pre><code class="language-sql runnable">SELECT
+    p.name AS product_name,
+    c.name AS category_name
+FROM
+    products AS p
+LEFT JOIN
+    product_categories AS pc ON p.id = pc.product_id
+LEFT JOIN
+    categories AS c ON pc.category_id = c.id
+ORDER BY
+    c.name NULLS FIRST;
+</code></pre>
+<p><em>Замечание: <code>ORDER BY c.name NULLS FIRST</code> — это специфичная для PostgreSQL (и стандарта SQL) конструкция, которая позволяет явно управлять сортировкой <code>NULL</code> значений.</em></p>
+<h2 id="Решение-4-right-join-и-агрегация"><a class="header" href="#Решение-4-right-join-и-агрегация">Решение 4: <code>RIGHT JOIN</code> и агрегация</a></h2>
+<pre><code class="language-sql runnable">SELECT
+    c.name AS category_name,
+    COUNT(p.id) AS product_count
+FROM
+    products AS p
+JOIN
+    product_categories AS pc ON p.id = pc.product_id
+RIGHT JOIN
+    categories AS c ON pc.category_id = c.id
+GROUP BY
+    c.name
+ORDER BY
+    product_count DESC;
+</code></pre>
+<p><em>Замечание: Мы используем <code>RIGHT JOIN</code> от <code>categories</code> к <code>product_categories</code>, чтобы гарантированно включить все категории. <code>COUNT(p.id)</code> посчитает <code>NULL</code> как 0, что нам и нужно.</em></p>
+<h2 id="Решение-5-self-join-соединение-с-собой"><a class="header" href="#Решение-5-self-join-соединение-с-собой">Решение 5: Self-Join (соединение с собой)</a></h2>
+<pre><code class="language-sql runnable">SELECT
+    child.name AS child_name,
+    parent.name AS parent_name
+FROM
+    categories AS child
+JOIN
+    categories AS parent ON child.parent_category_id = parent.id;
+</code></pre>
+<p><em>Замечание: Мы берем таблицу <code>categories</code> дважды под разными "именами" (<code>child</code> и <code>parent</code>) и соединяем их по полю <code>parent_category_id</code>, которое ссылается на <code>id</code> в той же таблице.</em></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="Проект-Автосалон-Врум-Бум"><a class="header" href="#Проект-Автосалон-Врум-Бум">Проект: Автосалон "Врум-Бум"</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="Обзор-модуля-1"><a class="header" href="#Обзор-модуля-1">Обзор модуля</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="Теория-2"><a class="header" href="#Теория-2">Теория</a></h1>
@@ -1680,7 +2453,7 @@ SELECT first_name, last_name, salary FROM employees WHERE department = 'IT';
 <div style="break-before: page; page-break-before: always;"></div><h1 id="Справочник-sql"><a class="header" href="#Справочник-sql">Справочник SQL</a></h1>
 <h2 id="Основные-команды"><a class="header" href="#Основные-команды">Основные команды</a></h2>
 <h3 id="ddl-data-definition-language"><a class="header" href="#ddl-data-definition-language">DDL (Data Definition Language)</a></h3>
-<h4 id="create-table"><a class="header" href="#create-table">CREATE TABLE</a></h4>
+<h4 id="create-table-1"><a class="header" href="#create-table-1">CREATE TABLE</a></h4>
 <pre><code class="language-sql">CREATE TABLE table_name (
     column1 datatype constraint,
     column2 datatype constraint,
@@ -1776,7 +2549,7 @@ WHERE condition;
 <li><code>CURRENT_TIME</code> - текущее время</li>
 <li><code>EXTRACT(part FROM date)</code> - извлечение части даты</li>
 </ul>
-<h2 id="join-операции-1"><a class="header" href="#join-операции-1">JOIN операции</a></h2>
+<h2 id="join-операции"><a class="header" href="#join-операции">JOIN операции</a></h2>
 <h3 id="inner-join"><a class="header" href="#inner-join">INNER JOIN</a></h3>
 <pre><code class="language-sql">SELECT columns
 FROM table1

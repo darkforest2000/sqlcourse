@@ -38,8 +38,10 @@
   - [Связи между таблицами](modules/01-sql-basics/theory/05-relationships.md)
   - [JOIN операции](modules/01-sql-basics/theory/06-joins.md)
 - [Практика](modules/01-sql-basics/practice/README.md)
-  - [Упражнения](modules/01-sql-basics/practice/exercises/README.md)
-  - [Решения](modules/01-sql-basics/practice/solutions/README.md)
+  - [Упражнения: DDL](modules/01-sql-basics/practice/exercises/01-data-definition.md)
+  - [Упражнения: DML и JOIN](modules/01-sql-basics/practice/exercises/02-data-manipulation.md)
+  - [Решения: DDL](modules/01-sql-basics/practice/solutions/01-data-definition-solutions.md)
+  - [Решения: DML и JOIN](modules/01-sql-basics/practice/solutions/02-data-manipulation-solutions.md)
 - [Проект: Автосалон "Врум-Бум"](modules/01-sql-basics/project/README.md)
 
 ## 02. Продвинутый SQL

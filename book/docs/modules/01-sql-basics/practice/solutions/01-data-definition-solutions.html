@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Решения - SQL для разработки - Авторский курс</title>
+        <title>Решения: DDL - SQL для разработки - Авторский курс</title>
 
 
         <!-- Custom HTML head -->
@@ -144,7 +144,7 @@
                         <a href="https://github.com/username/sql-yaru" title="Git repository" aria-label="Git repository">
                             <i id="git-repository-button" class="fa fa-github"></i>
                         </a>
-                        <a href="https://github.com/username/sql-yaru/edit/main/src/modules/01-sql-basics/practice/solutions/README.md" title="Suggest an edit" aria-label="Suggest an edit">
+                        <a href="https://github.com/username/sql-yaru/edit/main/src/modules/01-sql-basics/practice/solutions/01-data-definition-solutions.md" title="Suggest an edit" aria-label="Suggest an edit">
                             <i id="git-edit-button" class="fa fa-edit"></i>
                         </a>
 
@@ -173,17 +173,67 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="Решения"><a class="header" href="#Решения">Решения</a></h1>
+                        <h1 id="Решения-Определение-данных-ddl"><a class="header" href="#Решения-Определение-данных-ddl">Решения: Определение данных (DDL)</a></h1>
+<h2 id="Решение-1-Создание-таблицы-products"><a class="header" href="#Решение-1-Создание-таблицы-products">Решение 1: Создание таблицы <code>products</code></a></h2>
+<pre><code class="language-sql runnable">CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    sku VARCHAR(50) UNIQUE,
+    description TEXT,
+    price NUMERIC(10, 2) NOT NULL CHECK (price &gt;= 0),
+    stock_quantity INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Проверим, что таблица создалась
+SELECT * FROM products;
+</code></pre>
+<h2 id="Решение-2-Создание-таблицы-categories"><a class="header" href="#Решение-2-Создание-таблицы-categories">Решение 2: Создание таблицы <code>categories</code></a></h2>
+<pre><code class="language-sql runnable">CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    parent_category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL
+);
+
+-- Проверим, что таблица создалась
+SELECT * FROM categories;
+</code></pre>
+<p><em>Примечание: <code>ON DELETE SET NULL</code> означает, что если родительская категория будет удалена, у дочерних категорий это поле станет <code>NULL</code>, и они превратятся в категории верхнего уровня.</em></p>
+<h2 id="Решение-3-Связывание-продуктов-и-категорий"><a class="header" href="#Решение-3-Связывание-продуктов-и-категорий">Решение 3: Связывание продуктов и категорий</a></h2>
+<pre><code class="language-sql runnable">CREATE TABLE product_categories (
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    PRIMARY KEY (product_id, category_id)
+);
+
+-- Проверим структуру таблицы (данных пока нет)
+\d product_categories
+</code></pre>
+<p><em>Примечание: <code>ON DELETE CASCADE</code> здесь очень важен. Он гарантирует, что при удалении продукта или категории, их связи в этой таблице будут автоматически удалены, предотвращая появление "мусорных" ссылок.</em></p>
+<h2 id="Решение-4-Изменение-таблицы-products"><a class="header" href="#Решение-4-Изменение-таблицы-products">Решение 4: Изменение таблицы <code>products</code></a></h2>
+<pre><code class="language-sql runnable">-- 1. Добавляем поле is_published
+ALTER TABLE products ADD COLUMN is_published BOOLEAN DEFAULT FALSE;
+
+-- 2. Добавляем поле weight_kg
+ALTER TABLE products ADD COLUMN weight_kg NUMERIC(8, 3);
+
+-- 3. Переименовываем sku в article
+ALTER TABLE products RENAME COLUMN sku TO article;
+
+-- Проверим новую структуру таблицы
+\d products
+</code></pre>
+<p><em>Примечание: Команда <code>\d</code> является специфичной для клиента <code>psql</code> и может не работать в других SQL-инструментах. Она используется здесь для демонстрации и позволяет быстро посмотреть структуру таблицы.</em></p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../../../modules/01-sql-basics/practice/exercises/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../../../modules/01-sql-basics/practice/exercises/02-data-manipulation.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../../../modules/01-sql-basics/project/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../../../modules/01-sql-basics/practice/solutions/02-data-manipulation-solutions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -193,11 +243,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../../../modules/01-sql-basics/practice/exercises/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../../../modules/01-sql-basics/practice/exercises/02-data-manipulation.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../../../modules/01-sql-basics/project/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../../../modules/01-sql-basics/practice/solutions/02-data-manipulation-solutions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

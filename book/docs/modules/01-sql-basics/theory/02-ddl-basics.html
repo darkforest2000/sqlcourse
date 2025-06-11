@@ -173,7 +173,103 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="Основы-sql-ddl"><a class="header" href="#Основы-sql-ddl">Основы SQL: DDL</a></h1>
+                        <h1 id="92-Основы-sql-ddl-data-definition-language"><a class="header" href="#92-Основы-sql-ddl-data-definition-language">9.2. Основы SQL: DDL (Data Definition Language)</a></h1>
+<p>DDL (Data Definition Language) — это подмножество языка SQL, которое отвечает за создание, изменение и удаление структуры объектов базы данных. Эти команды не работают с самими данными, а только с их "контейнерами" и метаданными.</p>
+<p>Основные команды DDL:</p>
+<ul>
+<li><code>CREATE</code> — создать объект.</li>
+<li><code>ALTER</code> — изменить объект.</li>
+<li><code>DROP</code> — удалить объект.</li>
+</ul>
+<h2 id="create-Создание-объектов"><a class="header" href="#create-Создание-объектов"><code>CREATE</code>: Создание объектов</a></h2>
+<h3 id="create-database"><a class="header" href="#create-database"><code>CREATE DATABASE</code></a></h3>
+<p>Создает новую базу данных внутри кластера.</p>
+<pre><code class="language-sql">CREATE DATABASE my_new_database;
+</code></pre>
+<h3 id="create-schema"><a class="header" href="#create-schema"><code>CREATE SCHEMA</code></a></h3>
+<p>Создает новую схему внутри текущей базы данных.</p>
+<pre><code class="language-sql">CREATE SCHEMA my_app;
+</code></pre>
+<h3 id="create-table"><a class="header" href="#create-table"><code>CREATE TABLE</code></a></h3>
+<p>Это одна из самых важных и многофункциональных команд. Она создает новую таблицу в текущей схеме.</p>
+<p><strong>Синтаксис:</strong></p>
+<pre><code class="language-sql">CREATE TABLE table_name (
+    column_name1 data_type [constraints],
+    column_name2 data_type [constraints],
+    ...
+    table_constraints
+);
+</code></pre>
+<p><strong>Основные типы данных в PostgreSQL:</strong></p>
+<ul>
+<li><code>INTEGER</code> (или <code>INT</code>), <code>BIGINT</code>, <code>SMALLINT</code>: Целочисленные типы.</li>
+<li><code>NUMERIC(precision, scale)</code> или <code>DECIMAL</code>: Числа с фиксированной точностью (например, для денег).</li>
+<li><code>REAL</code>, <code>DOUBLE PRECISION</code>: Числа с плавающей точкой.</li>
+<li><code>SERIAL</code>, <code>BIGSERIAL</code>: Автоинкрементные целые числа (идеально для первичных ключей).</li>
+<li><code>VARCHAR(n)</code>, <code>TEXT</code>: Строки. <code>VARCHAR(n)</code> ограничивает максимальную длину, <code>TEXT</code> — нет.</li>
+<li><code>BOOLEAN</code>: <code>TRUE</code> или <code>FALSE</code>.</li>
+<li><code>DATE</code>, <code>TIME</code>, <code>TIMESTAMP</code>: Дата, время, дата и время.</li>
+<li><code>JSON</code>, <code>JSONB</code>: Хранение JSON. <code>JSONB</code> является бинарным форматом и предпочтителен для большинства операций.</li>
+</ul>
+<p><strong>Ограничения (Constraints):</strong></p>
+<ul>
+<li><code>NOT NULL</code>: Колонка не может содержать <code>NULL</code>.</li>
+<li><code>UNIQUE</code>: Все значения в колонке должны быть уникальны.</li>
+<li><code>PRIMARY KEY</code>: Комбинация <code>NOT NULL</code> и <code>UNIQUE</code>. Уникально идентифицирует каждую запись в таблице. У таблицы может быть только один первичный ключ.</li>
+<li><code>FOREIGN KEY</code>: Устанавливает связь с другой таблицей.</li>
+<li><code>CHECK</code>: Проверяет, что значение в колонке удовлетворяет определенному условию.</li>
+<li><code>DEFAULT</code>: Устанавливает значение по умолчанию, если оно не указано.</li>
+</ul>
+<p><strong>Пример:</strong></p>
+<pre><code class="language-sql">CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    balance NUMERIC(10, 2) CHECK (balance &gt;= 0)
+);
+</code></pre>
+<h2 id="alter-Изменение-объектов"><a class="header" href="#alter-Изменение-объектов"><code>ALTER</code>: Изменение объектов</a></h2>
+<p>Команда <code>ALTER</code> позволяет изменять существующие объекты. Чаще всего используется <code>ALTER TABLE</code>.</p>
+<p><strong>Примеры:</strong></p>
+<pre><code class="language-sql">-- Добавить новую колонку
+ALTER TABLE users ADD COLUMN last_login_ip VARCHAR(45);
+
+-- Удалить колонку
+ALTER TABLE users DROP COLUMN last_login_ip;
+
+-- Изменить тип данных колонки (может быть сложной операцией)
+ALTER TABLE users ALTER COLUMN username TYPE VARCHAR(80);
+
+-- Добавить ограничение
+ALTER TABLE users ADD CONSTRAINT positive_balance CHECK (balance &gt;= 0);
+
+-- Удалить ограничение
+ALTER TABLE users DROP CONSTRAINT positive_balance;
+
+-- Переименовать таблицу
+ALTER TABLE users RENAME TO app_users;
+</code></pre>
+<h2 id="drop-Удаление-объектов"><a class="header" href="#drop-Удаление-объектов"><code>DROP</code>: Удаление объектов</a></h2>
+<p>Команда <code>DROP</code> полностью и безвозвратно удаляет объект из базы данных. Используйте её с осторожностью!</p>
+<p><strong>Примеры:</strong></p>
+<pre><code class="language-sql">-- Удалить таблицу
+DROP TABLE app_users;
+
+-- Удалить таблицу, только если она существует (не вызовет ошибки)
+DROP TABLE IF EXISTS app_users;
+
+-- Удалить таблицу и все зависимые от нее объекты (например, внешние ключи)
+DROP TABLE app_users CASCADE;
+
+-- Удалить схему (удалит и все объекты внутри нее)
+DROP SCHEMA my_app CASCADE;
+
+-- Удалить базу данных
+DROP DATABASE my_new_database;
+</code></pre>
 
                     </main>
 

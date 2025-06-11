@@ -173,7 +173,118 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="join-операции"><a class="header" href="#join-операции">JOIN операции</a></h1>
+                        <h1 id="96-join-операции"><a class="header" href="#96-join-операции">9.6. JOIN операции</a></h1>
+<p>Оператор <code>JOIN</code> — это сердце реляционных баз данных. Он используется в запросах <code>SELECT</code> для объединения строк из двух или более таблиц на основе связанных столбцов. Без <code>JOIN</code> нам пришлось бы делать множество отдельных запросов и объединять данные вручную на стороне приложения, что крайне неэффективно.</p>
+<p>Для примеров будем использовать наши таблицы <code>employees</code> и <code>departments</code>.</p>
+<p><strong><code>departments</code></strong></p>
+<div class="table-wrapper"><table><thead><tr><th>id</th><th>name</th></tr></thead><tbody>
+<tr><td>1</td><td>IT</td></tr>
+<tr><td>2</td><td>HR</td></tr>
+<tr><td>3</td><td>Marketing</td></tr>
+</tbody></table>
+</div>
+<p><strong><code>employees</code></strong></p>
+<div class="table-wrapper"><table><thead><tr><th>id</th><th>full_name</th><th>department_id</th></tr></thead><tbody>
+<tr><td>1</td><td>Иван Петров</td><td>1</td></tr>
+<tr><td>2</td><td>Мария Козлова</td><td>1</td></tr>
+<tr><td>3</td><td>Анна Иванова</td><td>2</td></tr>
+<tr><td>4</td><td>Сергей Безруков</td><td>NULL</td></tr>
+</tbody></table>
+</div>
+<h2 id="inner-join-Внутреннее-соединение"><a class="header" href="#inner-join-Внутреннее-соединение"><code>INNER JOIN</code> (Внутреннее соединение)</a></h2>
+<p>Возвращает только те строки, для которых условие соединения выполняется в <strong>обеих</strong> таблицах. Это самый частый тип <code>JOIN</code>. Если в одной из таблиц нет совпадения, строка не попадает в результат.</p>
+<p><strong>Задача:</strong> Вывести список сотрудников и названия их отделов.</p>
+<pre><code class="language-sql">SELECT
+    e.full_name,
+    d.name
+FROM
+    employees AS e
+INNER JOIN
+    departments AS d ON e.department_id = d.id;
+</code></pre>
+<p><strong>Результат:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>full_name</th><th>name</th></tr></thead><tbody>
+<tr><td>Иван Петров</td><td>IT</td></tr>
+<tr><td>Мария Козлова</td><td>IT</td></tr>
+<tr><td>Анна Иванова</td><td>HR</td></tr>
+</tbody></table>
+</div>
+<p>Обратите внимание: Сергей Безруков (без отдела) и отдел Marketing (без сотрудников) не попали в выборку.</p>
+<p><em>Диаграмма Венна: пересечение двух множеств.</em>
+<img src="https://i.imgur.com/39m2s2b.png" alt="INNER JOIN" /></p>
+<h2 id="left-join-Левое-внешнее-соединение"><a class="header" href="#left-join-Левое-внешнее-соединение"><code>LEFT JOIN</code> (Левое внешнее соединение)</a></h2>
+<p>Возвращает <strong>все</strong> строки из <strong>левой</strong> таблицы (первой, указанной в <code>FROM</code>) и совпадающие строки из правой таблицы. Если совпадения в правой таблице нет, то для её столбцов возвращается <code>NULL</code>.</p>
+<p><strong>Задача:</strong> Вывести <strong>всех</strong> сотрудников и, если возможно, названия их отделов.</p>
+<pre><code class="language-sql">SELECT
+    e.full_name,
+    d.name
+FROM
+    employees AS e
+LEFT JOIN
+    departments AS d ON e.department_id = d.id;
+</code></pre>
+<p><strong>Результат:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>full_name</th><th>name</th></tr></thead><tbody>
+<tr><td>Иван Петров</td><td>IT</td></tr>
+<tr><td>Мария Козлова</td><td>IT</td></tr>
+<tr><td>Анна Иванова</td><td>HR</td></tr>
+<tr><td>Сергей Безруков</td><td><strong>NULL</strong></td></tr>
+</tbody></table>
+</div>
+<p>Теперь в результате есть все сотрудники, включая тех, у кого нет отдела.</p>
+<p><em>Диаграмма Венна: все левое множество.</em>
+<img src="https://i.imgur.com/k2jCflI.png" alt="LEFT JOIN" /></p>
+<h2 id="right-join-Правое-внешнее-соединение"><a class="header" href="#right-join-Правое-внешнее-соединение"><code>RIGHT JOIN</code> (Правое внешнее соединение)</a></h2>
+<p>Работает зеркально <code>LEFT JOIN</code>. Возвращает <strong>все</strong> строки из <strong>правой</strong> таблицы (указанной в <code>JOIN</code>) и совпадающие из левой. Если совпадения в левой таблице нет, для её столбцов будет <code>NULL</code>.</p>
+<p><strong>Задача:</strong> Вывести все отделы и, если возможно, сотрудников в них.</p>
+<pre><code class="language-sql">SELECT
+    e.full_name,
+    d.name
+FROM
+    employees AS e
+RIGHT JOIN
+    departments AS d ON e.department_id = d.id;
+</code></pre>
+<p><strong>Результат:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>full_name</th><th>name</th></tr></thead><tbody>
+<tr><td>Иван Петров</td><td>IT</td></tr>
+<tr><td>Мария Козлова</td><td>IT</td></tr>
+<tr><td>Анна Иванова</td><td>HR</td></tr>
+<tr><td><strong>NULL</strong></td><td>Marketing</td></tr>
+</tbody></table>
+</div>
+<p>Теперь в результате есть все отделы, включая те, в которых нет сотрудников. На практике <code>RIGHT JOIN</code> используется редко, так как почти любой такой запрос можно переписать через <code>LEFT JOIN</code>, поменяв таблицы местами, что обычно проще для восприятия.</p>
+<p><em>Диаграмма Венна: все правое множество.</em>
+<img src="https://i.imgur.com/EE2Y21c.png" alt="RIGHT JOIN" /></p>
+<h2 id="full-outer-join-Полное-внешнее-соединение"><a class="header" href="#full-outer-join-Полное-внешнее-соединение"><code>FULL OUTER JOIN</code> (Полное внешнее соединение)</a></h2>
+<p>Объединяет <code>LEFT JOIN</code> и <code>RIGHT JOIN</code>. Возвращает <strong>все</strong> строки из <strong>обеих</strong> таблиц. Если для строки из одной таблицы нет совпадения в другой, недостающие значения заполняются <code>NULL</code>.</p>
+<p><strong>Задача:</strong> Вывести всех сотрудников и все отделы, сопоставив их там, где это возможно.</p>
+<pre><code class="language-sql">SELECT
+    e.full_name,
+    d.name
+FROM
+    employees AS e
+FULL OUTER JOIN
+    departments AS d ON e.department_id = d.id;
+</code></pre>
+<p><strong>Результат:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>full_name</th><th>name</th></tr></thead><tbody>
+<tr><td>Иван Петров</td><td>IT</td></tr>
+<tr><td>Мария Козлова</td><td>IT</td></tr>
+<tr><td>Анна Иванова</td><td>HR</td></tr>
+<tr><td>Сергей Безруков</td><td><strong>NULL</strong></td></tr>
+<tr><td><strong>NULL</strong></td><td>Marketing</td></tr>
+</tbody></table>
+</div>
+<p>В результате присутствуют и сотрудник без отдела, и отдел без сотрудников.</p>
+<p><em>Диаграмма Венна: объединение двух множеств.</em>
+<img src="https://i.imgur.com/PznDoW4.png" alt="FULL OUTER JOIN" /></p>
+<h2 id="Другие-виды-соединений"><a class="header" href="#Другие-виды-соединений">Другие виды соединений</a></h2>
+<ul>
+<li><strong><code>CROSS JOIN</code></strong>: Возвращает декартово произведение двух таблиц (каждая строка одной таблицы соединяется с каждой строкой другой). Используется редко.</li>
+<li><strong><code>NATURAL JOIN</code></strong>: <code>JOIN</code> по всем столбцам с одинаковыми именами. Считается плохой практикой, так как он неявный и может привести к ошибкам, если в таблицы добавятся новые столбцы с совпадающими именами.</li>
+<li><strong>Self-join (Соединение таблицы с самой собой)</strong>: Иногда нужно соединить таблицу саму с собой. Например, чтобы для каждого сотрудника найти имя его менеджера (который тоже является сотрудником). Это делается через присвоение таблице разных псевдонимов (<code>AS</code>).</li>
+</ul>
 
                     </main>
 

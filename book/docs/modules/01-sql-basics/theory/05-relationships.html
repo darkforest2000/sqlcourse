@@ -173,7 +173,109 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="Связи-между-таблицами"><a class="header" href="#Связи-между-таблицами">Связи между таблицами</a></h1>
+                        <h1 id="95-Связи-между-таблицами"><a class="header" href="#95-Связи-между-таблицами">9.5. Связи между таблицами</a></h1>
+<p>В реляционных базах данных информация разбита на множество таблиц. Чтобы эти данные имели смысл, таблицы должны быть связаны друг с другом. Механизм, обеспечивающий эти связи — это <strong>первичные</strong> и <strong>внешние ключи</strong>.</p>
+<ul>
+<li><strong>Первичный ключ (Primary Key)</strong>: Один или несколько столбцов, значения которых уникально идентифицируют каждую строку в таблице. Он не может содержать <code>NULL</code>.</li>
+<li><strong>Внешний ключ (Foreign Key)</strong>: Один или несколько столбцов в таблице, которые ссылаются на первичный ключ в другой таблице. Это и есть "связь".</li>
+</ul>
+<h2 id="Типы-связей"><a class="header" href="#Типы-связей">Типы связей</a></h2>
+<p>Существует три основных типа связей между таблицами.</p>
+<h3 id="1-Один-ко-многим-one-to-many-1m"><a class="header" href="#1-Один-ко-многим-one-to-many-1m">1. Один-ко-многим (One-to-Many, 1:M)</a></h3>
+<p>Это самый распространенный тип связи. Одна запись в "родительской" таблице (таблица "один") может быть связана с несколькими записями в "дочерней" таблице (таблица "многие").</p>
+<p><strong>Пример:</strong> Один отдел — много сотрудников.</p>
+<ul>
+<li>Таблица <code>departments</code> (отделы) — родительская. Её первичный ключ <code>id</code>.</li>
+<li>Таблица <code>employees</code> (сотрудники) — дочерняя. В ней есть внешний ключ <code>department_id</code>, который ссылается на <code>departments(id)</code>.</li>
+</ul>
+<p><strong>Реализация:</strong></p>
+<pre><code class="language-sql">CREATE TABLE departments (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    department_id INTEGER, -- Внешний ключ
+
+    -- Устанавливаем связь
+    FOREIGN KEY (department_id) REFERENCES departments (id)
+);
+</code></pre>
+<p>Теперь у каждого сотрудника может быть только один отдел, но в одном отделе может быть много сотрудников.</p>
+<h3 id="2-Многие-ко-многим-many-to-many-mn"><a class="header" href="#2-Многие-ко-многим-many-to-many-mn">2. Многие-ко-многим (Many-to-Many, M:N)</a></h3>
+<p>Эта связь возникает, когда одна запись из таблицы А может быть связана с несколькими записями из таблицы Б, и наоборот.</p>
+<p><strong>Пример:</strong> Студенты и курсы. Один студент может записаться на много курсов, и на одном курсе может учиться много студентов.</p>
+<p>Такую связь нельзя реализовать напрямую. Для этого используется третья, <strong>связующая таблица</strong> (junction table).</p>
+<p><strong>Реализация:</strong></p>
+<pre><code class="language-sql">CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(150) NOT NULL
+);
+
+-- Связующая таблица
+CREATE TABLE student_courses (
+    student_id INTEGER REFERENCES students(id),
+    course_id INTEGER REFERENCES courses(id),
+    enrollment_date DATE,
+    
+    -- Первичный ключ состоит из двух внешних ключей,
+    -- чтобы пара (студент, курс) была уникальной.
+    PRIMARY KEY (student_id, course_id)
+);
+</code></pre>
+<p>В таблице <code>student_courses</code> каждая строка — это факт записи одного конкретного студента на один конкретный курс.</p>
+<h3 id="3-Один-к-одному-one-to-one-11"><a class="header" href="#3-Один-к-одному-one-to-one-11">3. Один-к-одному (One-to-One, 1:1)</a></h3>
+<p>Это самый редкий тип связи. Одна запись в таблице А может быть связана только с одной записью в таблице Б, и наоборот.</p>
+<p>Обычно такую связь используют, чтобы:</p>
+<ul>
+<li>Разбить большую таблицу с множеством столбцов на части по логическому смыслу.</li>
+<li>Вынести редко используемые данные в отдельную таблицу для оптимизации.</li>
+<li>Реализовать более строгий контроль доступа к части данных.</li>
+</ul>
+<p><strong>Пример:</strong> Пользователи и их паспорта. У каждого пользователя может быть только один паспорт.</p>
+<p><strong>Реализация:</strong>
+Ключевым моментом является добавление ограничения <code>UNIQUE</code> к внешнему ключу.</p>
+<pre><code class="language-sql">CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE passports (
+    id SERIAL PRIMARY KEY,
+    series VARCHAR(4) NOT NULL,
+    number VARCHAR(6) NOT NULL,
+    user_id INTEGER NOT NULL UNIQUE, -- Уникальность обеспечивает связь 1:1
+
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+</code></pre>
+<p>Ограничение <code>UNIQUE</code> на <code>user_id</code> в таблице <code>passports</code> не позволит создать две записи с одним и тем же <code>user_id</code>, обеспечивая связь "один-к-одному".</p>
+<h2 id="Целостность-данных-referential-integrity"><a class="header" href="#Целостность-данных-referential-integrity">Целостность данных (Referential Integrity)</a></h2>
+<p>Внешние ключи также помогают поддерживать целостность данных. Что должно произойти с сотрудниками, если мы удалим их отдел?</p>
+<p>Для этого при определении внешнего ключа можно указать правила:</p>
+<ul>
+<li><code>ON DELETE</code>: Что делать в дочерней таблице, если связанная строка удаляется из родительской.</li>
+<li><code>ON UPDATE</code>: Что делать, если значение первичного ключа в родительской таблице изменяется (редко, но возможно).</li>
+</ul>
+<p><strong>Основные действия:</strong></p>
+<ul>
+<li><code>RESTRICT</code> (или <code>NO ACTION</code>): Запретить удаление/изменение в родительской таблице, если есть связанные строки. Это поведение по умолчанию.</li>
+<li><code>CASCADE</code>: Удалить/обновить связанные строки в дочерней таблице автоматически.</li>
+<li><code>SET NULL</code>: Установить значение внешнего ключа в <code>NULL</code> в дочерней таблице.</li>
+<li><code>SET DEFAULT</code>: Установить значение внешнего ключа в значение по умолчанию.</li>
+</ul>
+<p><strong>Пример с <code>CASCADE</code>:</strong></p>
+<pre><code class="language-sql">-- При удалении отдела, все его сотрудники тоже будут удалены
+FOREIGN KEY (department_id) REFERENCES departments (id) ON DELETE CASCADE;
+</code></pre>
+<p>Используйте <code>CASCADE</code> с большой осторожностью, так как это может привести к массовому удалению данных.</p>
 
                     </main>
 
